@@ -167,10 +167,12 @@
     estado.sucio = true; estado.modal = null; await persistir();
   }
 
-  // ── Fotos (Cloudinary, subida FIRMADA en servidor) ──
-  // El firmador (Cloudflare Worker) valida el token Firebase + rol y devuelve
-  // una firma HMAC-SHA1. El API Secret de Cloudinary vive SOLO en el firmador.
-  function subidasHabilitadas() { return !!(CFG.cloudinary && CFG.cloudinary.habilitado && CFG.cloudinary.signerUrl && CFG.cloudinary.cloudName); }
+  // ── Fotos (Cloudinary, preset UNSIGNED compartido) ──
+  // Mismo mecanismo probado en El Titi, Colsabor y NBC Company: subida directa
+  // con upload_preset, sin API key ni secretos en el cliente. Solo el panel
+  // autenticado (admin) expone el selector de archivos; la persistencia y la
+  // publicación se rigen por las reglas de Firestore.
+  function subidasHabilitadas() { return !!(CFG.cloudinary && CFG.cloudinary.habilitado && CFG.cloudinary.cloudName && CFG.cloudinary.uploadPreset); }
   async function agregarFoto(ev) {
     if (!subidasHabilitadas()) { toast('Subida de fotos no configurada.'); return; }
     const file = ev.target.files[0]; if (!file) return;
@@ -179,26 +181,14 @@
     if (file.size > 5 * 1024 * 1024) { toast('Imagen muy grande (máx 5 MB).'); return; }
     estado.guardando = true; render();
     try {
-      // 1) Firma en servidor: valida token Firebase + rol administrativo.
-      const idToken = await auth.currentUser.getIdToken();
-      const firmado = await fetch(CFG.cloudinary.signerUrl, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ idToken })
-      }).then((r) => r.json());
-      if (!firmado.signature) throw new Error((firmado && firmado.error) || 'No se pudo autorizar la subida.');
-
-      // 2) Comprime y sube a Cloudinary con la firma (sin exponer secretos).
-      const blob = await comprimir(file, 1000, 0.82);
+      const blob = await comprimir(file, 800, 0.8);
       const fd = new FormData();
       fd.append('file', blob, 'producto.jpg');
-      fd.append('api_key', firmado.apiKey);
-      fd.append('timestamp', firmado.timestamp);
-      fd.append('folder', firmado.folder);
-      fd.append('signature', firmado.signature);
+      fd.append('upload_preset', CFG.cloudinary.uploadPreset);
       const d = await fetch('https://api.cloudinary.com/v1_1/' + CFG.cloudinary.cloudName + '/image/upload', { method: 'POST', body: fd }).then((r) => r.json());
       if (!d.secure_url) throw new Error((d.error && d.error.message) || 'No se pudo subir la imagen.');
 
-      estado.form.fotos.push(d.secure_url);
+      estado.form.fotos.unshift(d.secure_url);   // la nueva foto queda como principal
       estado.guardando = false; toast('✓ Foto agregada'); render();
     } catch (e) {
       estado.guardando = false; toast('Error: ' + (e.message || e)); render();

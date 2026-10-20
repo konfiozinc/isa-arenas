@@ -26,10 +26,9 @@ window.CONFIG_ISA = {
   minimoPares: 6,                    // venta al por mayor: mínimo de pares por pedido
   cloudinary: {
     cloudName: 'f07x0wga',           // Cloudinary de la agencia
-    // Firmador de subidas (Cloudflare Worker). Firma en servidor sin exponer
-    // el API Secret; valida token Firebase + rol antes de firmar.
-    signerUrl: 'https://isa-arenas-firmador.konfiozinc.workers.dev',
-    // Subida HABILITADA vía firmador (se desactiva sola si falta signerUrl).
+    // Preset UNSIGNED compartido, mismo mecanismo probado en El Titi, Colsabor
+    // y NBC Company (subida directa sin API key ni secretos en el cliente).
+    uploadPreset: 'menu-digital',
     habilitado: true
   },
   firebase: {
