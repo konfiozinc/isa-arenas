@@ -1,12 +1,12 @@
 /* Service worker — Calzados ISA Arenas (catálogo) */
-const CACHE_NAME = 'isa-arenas-v1';
+const CACHE_NAME = 'isa-arenas-v2';
 const PRECACHE_URLS = [
   './',
   './index.html',
   './css/styles.css',
   './js/app.js',
   './manifest.json',
-  './assets/logo/logoisa.jpeg'
+  './assets/logo/logoisa-128.png'
 ];
 
 self.addEventListener('install', (event) => {

@@ -12,6 +12,7 @@ Thumbs.db
 node_modules/
 
 # Emuladores de Firebase (logs y caché local)
+*.log
 firebase-debug.log
 firestore-debug.log
 auth-debug.log

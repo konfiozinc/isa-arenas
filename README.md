@@ -6,9 +6,12 @@ Pages) + panel de administración con **Firebase Auth + Firestore** (persistenci
 real, roles separados).
 
 ## Identidad
-- Paleta tomada del logo: **rosa `#FC95DE`** y **turquesa `#8AC8D7`**.
-- Logo: `logoisa.jpeg` (raíz).
-- Vídeos: `variedades.mp4`, `pasosparavender.mp4`, `mejorproveedor.mp4`.
+- Paleta del nuevo logo: **negro premium `#050507`**, **rosa neón `#F060E0`** y
+  **turquesa eléctrico `#00FFFF`**.
+- Logo: `assets/logo/logoisa.png` (variantes `-512/-256/-128/-64`,
+  `-transparente` y `og-card.png`).
+- Vídeos: `assets/videos/variedades.mp4`, `pasosparavender.mp4`,
+  `mejorproveedor.mp4`.
 - Las fotografías de DTA se conservan como **material provisional** hasta que
   ISA entregue las definitivas (los precios/tallas se muestran «consultar»).
 

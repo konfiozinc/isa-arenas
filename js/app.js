@@ -87,7 +87,7 @@
     catalogoActual = catalogo;
     const c = catalogo.config || {};
     document.title = c.marca || 'Calzados ISA Arenas';
-    const logo = (c.portada && c.portada.imagen) ? c.portada.imagen : 'logoisa.jpeg';
+    const logo = (c.portada && c.portada.imagen) ? c.portada.imagen : 'assets/logo/logoisa-128.png';
     const logoEl = $('#logoMarca'); if (logoEl) logoEl.src = logo;
     const nombreEl = $('#marcaNombre'); if (nombreEl) nombreEl.textContent = c.marca || 'Calzados ISA Arenas';
     $$('.js-wa').forEach((a) => { a.href = waLink('Hola ' + (c.marca || 'Calzados ISA Arenas') + ', quiero información de sus productos.'); });

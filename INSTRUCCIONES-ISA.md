@@ -59,7 +59,7 @@ tiene un **orden** (el número que define en qué posición aparece) y un interr
 En **Contenido** puedes cambiar:
 
 - El **título, subtítulo y texto** de la portada.
-- La **imagen de portada** (normalmente tu logo `logoisa.jpeg`).
+- La **imagen de portada** (normalmente tu logo `assets/logo/logoisa-512.png`).
 - Los **vídeos** (título + archivo `.mp4`).
 - Tu **número de WhatsApp** (solo dígitos, con código de país).
 

@@ -217,7 +217,7 @@
   }
   function vistaLogin() {
     return '<div class="login-wrap"><div class="login-card">' +
-      '<div class="login-logo">👠</div><h1>ISA ARENAS · Panel</h1><p class="sub">Ingresa con tu correo y contraseña</p>' +
+      '<img class="login-logo" src="assets/logo/logoisa-128.png" alt="Calzados ISA Arenas"><h1>ISA ARENAS · Panel</h1><p class="sub">Ingresa con tu correo y contraseña</p>' +
       (estado.error ? '<div class="error-msg">' + esc(estado.error) + '</div>' : '') +
       '<div class="field"><label>Correo</label><input id="email" type="email" autocomplete="username" placeholder="admin@isa.com"></div>' +
       '<div class="field"><label>Contraseña</label><input id="password" type="password" autocomplete="current-password" placeholder="••••••••"></div>' +
@@ -238,7 +238,7 @@
 
     const modal = estado.modal ? vistaModal() : '';
 
-    return '<header class="app-head"><div class="t"><span class="dot"></span>Calzados ISA Arenas</div>' +
+    return '<header class="app-head"><img class="app-logo" src="assets/logo/logoisa-64.png" alt=""><div class="t"><span class="dot"></span>Calzados ISA Arenas</div>' +
       '<div class="rol">' + rolNombre + '</div><button id="btnLogout">Salir</button></header>' +
       '<div class="wrap">' +
       '<div class="topbar"><div class="tabs">' + botones + '</div>' +
@@ -333,7 +333,7 @@
         '<div class="field"><label>Título</label><input id="g-titulo" value="' + esc(port.titulo) + '"></div>' +
         '<div class="field"><label>Subtítulo</label><input id="g-subtitulo" value="' + esc(port.subtitulo) + '"></div>' +
         '<div class="field"><label>Texto</label><textarea id="g-texto" rows="2">' + esc(port.texto) + '</textarea></div>' +
-        '<div class="field"><label>Imagen de portada</label><input id="g-imagen" value="' + esc(port.imagen) + '" placeholder="logoisa.jpeg"></div>' +
+        '<div class="field"><label>Imagen de portada</label><input id="g-imagen" value="' + esc(port.imagen) + '" placeholder="assets/logo/logoisa-512.png"></div>' +
         '<h3 class="subh">Vídeos</h3>' + videos +
         '<div class="sheet-foot"><button class="btn btn-ghost" data-close>Cancelar</button><button class="btn btn-primary" id="btnGuardarContenido">Guardar</button></div></div></div>';
     }

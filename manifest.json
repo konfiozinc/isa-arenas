@@ -5,11 +5,11 @@
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#FC95DE",
-  "theme_color": "#FC95DE",
+  "background_color": "#050507",
+  "theme_color": "#050507",
   "icons": [
     {
-      "src": "assets/logo/logoisa.jpeg",
+      "src": "assets/logo/logoisa-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"

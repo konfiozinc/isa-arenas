@@ -9,12 +9,12 @@
       "titulo": "Catálogo Mayorista",
       "subtitulo": "Venta al por mayor · Envíos a toda Colombia",
       "texto": "Mínimo 6 pares por pedido. Envíos a toda Colombia.",
-      "imagen": "logoisa.jpeg"
+      "imagen": "assets/logo/logoisa-512.png"
     },
     "videos": [
-      { "id": "variedades", "titulo": "Nuestras variedades", "url": "variedades.mp4" },
-      { "id": "pasos", "titulo": "Pasos para vender", "url": "pasosparavender.mp4" },
-      { "id": "proveedor", "titulo": "Tu mejor proveedor", "url": "mejorproveedor.mp4" }
+      { "id": "variedades", "titulo": "Nuestras variedades", "url": "assets/videos/variedades.mp4" },
+      { "id": "pasos", "titulo": "Pasos para vender", "url": "assets/videos/pasosparavender.mp4" },
+      { "id": "proveedor", "titulo": "Tu mejor proveedor", "url": "assets/videos/mejorproveedor.mp4" }
     ]
   },
   "categorias": [
