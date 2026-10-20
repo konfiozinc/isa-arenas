@@ -7,8 +7,8 @@
     "ubicacion": "",
     "portada": {
       "titulo": "Catálogo Mayorista",
-      "subtitulo": "Venta al por mayor · Envíos a toda Colombia",
-      "texto": "Mínimo 6 pares por pedido. Envíos a toda Colombia.",
+      "subtitulo": "Ventas exclusivamente al por mayor · Pedido mínimo de 6 pares",
+      "texto": "Ventas exclusivamente al por mayor · Pedido mínimo de 6 pares · Envíos a toda Colombia.",
       "imagen": "assets/logo/logoisa-512.png"
     },
     "videos": [
@@ -27,7 +27,7 @@
       "nombre": "Chanclas planas",
       "categoria": "dama",
       "descripcion": "Comodas y elegantes para el dia a dia.",
-      "precio": null,
+      "precio": 24000,
       "tallas": [],
       "fotos": [
         "assets/catalogo_dta/dama-planas/planas1.jpg",
@@ -48,7 +48,7 @@
       "nombre": "Chanclas altas",
       "categoria": "dama",
       "descripcion": "Plataforma con estilo.",
-      "precio": null,
+      "precio": 30000,
       "tallas": [],
       "fotos": [
         "assets/catalogo_dta/dama-altas/altas1.jpg",
@@ -82,7 +82,7 @@
       "nombre": "Chanclas caballero",
       "categoria": "caballero",
       "descripcion": "Resistentes y versatiles.",
-      "precio": null,
+      "precio": 32000,
       "tallas": [],
       "fotos": [
         "assets/catalogo_dta/caballero/caballero1.jpg",
