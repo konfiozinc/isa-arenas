@@ -266,7 +266,7 @@
       } catch (e) { catalogo = null; }
     }
     if (!catalogo) {
-      try { const r = await fetch('content/catalogo.json'); catalogo = await r.json(); const a = $('#aviso'); if (a) { a.classList.remove('hidden'); a.querySelector('div').textContent = 'Vista con datos de muestra (Firestore no disponible).'; } } catch (e) { catalogo = null; }
+      try { const r = await fetch('content/catalogo.json'); catalogo = await r.json(); const a = $('#aviso'); if (a) { a.classList.remove('hidden'); a.querySelector('div').textContent = 'Vista con datos de muestra (catálogo aún no publicado).'; } } catch (e) { catalogo = null; }
     }
     if (catalogo) render(catalogo);
   }
