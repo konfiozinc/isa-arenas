@@ -1,92 +1,75 @@
-# DTA Chanclas — Catálogo Digital
+# Calzados ISA Arenas — Catálogo digital
 
-Sitio estático (HTML/CSS/JS puro + PWA) basado en el Expediente Técnico DTA.
+Catálogo tipo boutique para **CALZADOS ISA ARENAS** (WhatsApp 310 325 5067),
+reconstruido sobre el proyecto DTA Chanclas. Sitio público estático (GitHub
+Pages) + panel de administración con **Firebase Auth + Firestore** (persistencia
+real, roles separados).
 
-## 📁 Estructura
+## Identidad
+- Paleta tomada del logo: **rosa `#FC95DE`** y **turquesa `#8AC8D7`**.
+- Logo: `logoisa.jpeg` (raíz).
+- Vídeos: `variedades.mp4`, `pasosparavender.mp4`, `mejorproveedor.mp4`.
+- Las fotografías de DTA se conservan como **material provisional** hasta que
+  ISA entregue las definitivas (los precios/tallas se muestran «consultar»).
 
+## Arquitectura
+- **Sitio público** (`index.html`, `js/app.js`, `css/styles.css`): lee
+  `catalogo/publico` de Firestore; si no hay red, degrada a
+  `content/catalogo.json`.
+- **Panel** (`admin.html`, `js/admin.js`): edita `catalogo/borrador` y publica
+  copiándolo a `catalogo/publico`. Subida de fotos por Cloudinary (preset sin
+  firma).
+- **Roles** (`usuarios/{uid}` con campo `rol`):
+  - `isa` → administra su catálogo y publica.
+  - `konfio` → igual + lista/gestiona usuarios (superadmin).
+- **Reglas** en `firestore.rules`: lectura pública del catálogo publicado;
+  escritura solo para administradores autenticados con rol.
+
+## Datos (Firestore)
 ```
-dta-chanclas/
-├── index.html
-├── manifest.json            ← config de instalación PWA
-├── service-worker.js        ← cache offline básico
-├── css/styles.css
-├── js/app.js                ← productos, carrusel, QR, vCard, PWA
-└── assets/
-    ├── logo/dta-logo.png    ← logo concepto #2 (elegido según expediente)
-    └── catalogo_dta/
-        ├── dama-planas/
-        ├── dama-altas/
-        ├── altas-cruzadas/
-        └── caballero/
+catalogo/borrador  → { config, categorias, productos }   (editable)
+catalogo/publico   → { config, categorias, productos }   (publicado)
+usuarios/{uid}     → { email, nombre, rol }
+```
+Producto: `{ id, nombre, categoria, descripcion, precio (null=consultar),
+tallas ([]), fotos[], video, destacado, disponible }`.
+
+## Entorno local (emuladores, sin tocar producción)
+```powershell
+# 1) Requisitos: Node.js · firebase-tools (ya instalado) · Java (JBR de Android Studio)
+$env:JAVA_HOME = "C:\Program Files\Android\Android Studio\jbr"
+$env:PATH = "$env:JAVA_HOME\bin;$env:PATH"
+
+# 2) Emuladores Auth + Firestore
+node "C:\Users\usuario29\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js" emulators:start --only firestore,auth
+
+# 3) Sembrar usuarios demo + catálogo inicial
+node scripts/sembrar-emulador.mjs
+
+# 4) Servir el sitio (otra terminal)
+node herramientas/servir.js 5170
+```
+Credenciales demo (ficticias, solo emulador):
+- ISA → `isa@demo.local` / `DemoIsa2026`
+- KONFÍO → `admin@konfiozinc.local` / `DemoKonfio2026`
+
+## Pruebas
+```powershell
+node herramientas/probar-isa.cjs      # CRUD + publicación + persistencia
+node herramientas/probar-carrito.cjs  # carrito, tallas, totales, WhatsApp
+node herramientas/probar-acceso.cjs   # roles y acceso no autorizado
+node herramientas/capturar-isa.cjs    # capturas móvil/escritorio + panel
 ```
 
-## 🎨 Identidad de marca
+## Pendiente para publicación (requiere autorización)
+1. Crear el proyecto Firebase dedicado de ISA y pegar sus claves públicas en
+   `config-isa.js` (marcadores `API_KEY_ISA` / `APP_ID_ISA`) y cambiar
+   `modo: 'emulador'` → `'produccion'`.
+2. Crear las cuentas de Auth (ISA y KONFÍO) y sus documentos de rol en
+   `usuarios/` (script `scripts/crear-usuario.mjs` con Admin SDK, o consola).
+3. Desplegar `firestore.rules` (`firebase deploy --only firestore:rules`).
+4. Cambiar la URL/repositorio cuando el propietario lo comunique (el código
+   usa rutas relativas y una sola constante de WhatsApp; solo se actualiza
+   `canonical`/`og:url` y el nombre del repo).
 
-- **Logo:** concepto #2 del expediente (franja "VENDE, EMPRENDE Y CRECE").
-- **Paleta:** azul marino `#0B1F4D`, rojo `#E11D33`, blanco — tomada del logo, como marca propia DTA.
-- **Nota legal:** se evitó cualquier referencia a "Tommy" en nombre, copy o metadatos para no exponer la marca a un reclamo de infracción. Si tus fotos de producto traen ese nombre superpuesto o cosido, recomiendo no usarlas tal cual — usa fotos limpias del producto físico.
-
-## 📸 Dónde subir tus fotos
-
-`assets/catalogo_dta/<categoria>/<archivo>.jpg`, con los nombres ya configurados en `js/app.js` (`planas1.jpg`, `altas1.jpg`, `cruzadas1.jpg`, `caballero1.jpg`, etc.). Mientras no subas una, la tarjeta muestra "Foto próximamente" sin romper el diseño.
-
-Para agregar productos nuevos: edita el array `productos` de la categoría en `js/app.js` y sube la foto con ese mismo nombre.
-
-## ✏️ Datos editables (todo en `js/app.js`, arriba del todo)
-
-- `WHATSAPP_NUM` → ya configurado con **573175821372**
-- `ASESOR_NOMBRE`, `SITIO_NOMBRE`
-- Precios y tallas por categoría dentro de `categorias`
-- Cada categoría admite hasta **10 fotos**: `planas1.jpg` ... `planas10.jpg`, `altas1.jpg` ... `altas10.jpg`, `cruzadas1.jpg` ... `cruzadas10.jpg`, `caballero1.jpg` ... `caballero10.jpg`. No hace falta subir las 10 — las que falten se ven como "Foto pendiente" dentro del carrusel.
-
-## 🖱️ Cómo funciona ahora (versión landing)
-
-- La página ya no lista todos los productos en una grilla larga: cada categoría es una **tarjeta** en la sección "Categorías". Al hacer clic, se abre un **carrusel modal** con hasta 10 fotos de esa categoría, navegación con flechas/puntos, y un botón de WhatsApp que manda la referencia exacta de la foto que se está viendo.
-- Navegación superior fija (`Categorías`, `Precios`, `Contacto`) con scroll suave.
-- Sección de precios con dos tarjetas de color (azul = detal, naranja = mayorista) en vez de listas planas.
-- Se eliminó el bloque suelto de "Tallas disponibles" — esa información ahora vive dentro de cada tarjeta de categoría y del carrusel.
-
-## 🚀 Subir a GitHub Pages
-
-```bash
-cd dta-chanclas
-git init
-git add .
-git commit -m "Catálogo DTA Chanclas - versión inicial"
-git branch -M main
-git remote add origin https://github.com/konfiozinc/dta-chanclas.git
-git push -u origin main
-```
-
-En GitHub: **Settings → Pages → Source: `main` / `(root)`**. El `index.html` debe quedar en la raíz del repo (o de la carpeta que selecciones) o dará 404.
-
-## 📲 Funciones incluidas (del expediente)
-
-✅ Catálogo visual por categoría · ✅ Galería/carrusel destacado · ✅ WhatsApp flotante · ✅ Compartir catálogo (share nativo o QR) · ✅ Guardar contacto (.vcf) · ✅ Código QR · ✅ Iconos de redes sociales (enlaza tus perfiles en `index.html`, sección `.hero-social`) · ✅ Instalable como PWA (manifest + service worker) · ✅ Diseño responsive.
-
-**Pendiente para activar 100% la PWA:** los íconos del manifest están apuntando al logo actual; cuando tengas un logo definitivo en alta resolución (512×512 mínimo, fondo sólido), reemplázalo en `assets/logo/dta-logo.png`.
-
----
-
-## 🖥️ Panel CMS (editar sin código)
-
-El catálogo ya no está en el JavaScript: ahora se lee de **content/catalogo.json**.
-Para que el cliente edite precios/tallas/fotos sin tocar código, hay dos opciones:
-
-### Opción A — Pages CMS (la más rápida, sin OAuth) ⭐
-1. Entra a https://app.pagescms.org y entra con GitHub.
-2. Conecta el repositorio konfiozinc/proyecto-dta.
-3. Crea una colección tipo "File" apuntando a content/catalogo.json con los campos: id, nombre, tallas, precioDetal, precioMayor, descripcion, fotos (lista).
-4. Comparte el enlace con el cliente: edita → guarda → GitHub Pages se actualiza en ~1 min.
-
-### Opción B — Decap CMS (panel dentro del sitio, requiere OAuth una vez)
-Ya está creado el panel en **/admin/** (dmin/index.html + dmin/config.yml).
-Para activarlo necesitas (paso manual, no se puede automatizar desde aquí):
-1. GitHub → Settings → Developer settings → OAuth Apps → **New OAuth App**:
-   - Homepage URL: https://konfiozinc.github.io/proyecto-dta/
-   - Authorization callback URL: la de tu proveedor OAuth (Netlify/Vercel).
-2. Aloja el proveedor OAuth (ej. decap-cms-oauth-provider en Netlify) y copia su URL.
-3. Pega esa URL en dmin/config.yml → ackend.base_url.
-4. Abre https://konfiozinc.github.io/proyecto-dta/admin/ → "Iniciar sesión con GitHub".
-
-> Mientras no se configure el OAuth, el sitio funciona normalmente leyendo content/catalogo.json.
+**No se publica nada sin autorización expresa.**

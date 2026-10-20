@@ -1,0 +1,36 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── Roles ──
+    // `usuarios/{uid}` guarda { email, nombre, rol: 'isa' | 'konfio' }.
+    function rolDe(uid) {
+      return get(/databases/$(database)/documents/usuarios/$(uid)).data.rol;
+    }
+    function esAdmin() {
+      return request.auth != null && rolDe(request.auth.uid) in ['isa', 'konfio'];
+    }
+    function esSuper() {
+      return request.auth != null && rolDe(request.auth.uid) == 'konfio';
+    }
+
+    // Catálogo: el público ve la versión publicada; los administradores
+    // editan el borrador y publican (escriben `publico`).
+    match /catalogo/publico {
+      allow read: if true;
+      allow write: if esAdmin();
+    }
+    match /catalogo/borrador {
+      allow read, write: if esAdmin();
+    }
+
+    // Usuarios: cada quien lee su propia ficha; el superadmin puede listar y
+    // gestionar las cuentas y roles. Esto separa ISA (admin de su catálogo)
+    // de KONFÍO ZINC (superadmin).
+    match /usuarios/{uid} {
+      allow get: if request.auth != null && (request.auth.uid == uid || esSuper());
+      allow list: if esSuper();
+      allow create, update, delete: if esSuper();
+    }
+  }
+}

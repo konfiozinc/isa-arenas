@@ -1,15 +1,15 @@
 {
-  "name": "DTA Chanclas - Catálogo Digital",
-  "short_name": "DTA Chanclas",
-  "description": "Catálogo mayorista y al detal de chanclas. Vende, Emprende y Crece.",
+  "name": "Calzados ISA Arenas - Catálogo Digital",
+  "short_name": "Calzados ISA Arenas",
+  "description": "Catálogo mayorista y al detal de chanclas. Boutique digital de calzado.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#0B1F4D",
-  "theme_color": "#0B1F4D",
+  "background_color": "#FC95DE",
+  "theme_color": "#FC95DE",
   "icons": [
     {
-      "src": "assets/logo/dta-logo.png",
+      "src": "assets/logo/logoisa.jpeg",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"

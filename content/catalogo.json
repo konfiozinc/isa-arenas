@@ -1,40 +1,99 @@
 {
+  "config": {
+    "marca": "Calzados ISA Arenas",
+    "eslogan": "Boutique digital de calzado",
+    "whatsapp": "573103255067",
+    "telefono": "310 325 5067",
+    "ubicacion": "",
+    "portada": {
+      "titulo": "Calzados ISA Arenas",
+      "subtitulo": "Estilo y comodidad para tu día a día",
+      "texto": "Explora nuestras líneas y escríbenos para pedir la tuya.",
+      "imagen": "logoisa.jpeg"
+    },
+    "videos": [
+      { "id": "variedades", "titulo": "Nuestras variedades", "url": "variedades.mp4" },
+      { "id": "pasos", "titulo": "Pasos para vender", "url": "pasosparavender.mp4" },
+      { "id": "proveedor", "titulo": "Tu mejor proveedor", "url": "mejorproveedor.mp4" }
+    ]
+  },
   "categorias": [
+    { "id": "dama", "nombre": "Dama", "orden": 1, "activa": true },
+    { "id": "caballero", "nombre": "Caballero", "orden": 2, "activa": true }
+  ],
+  "productos": [
     {
-      "id": "dama-planas",
-      "nombre": "Dama Planas",
-      "tallas": "Dama 35 a 41",
-      "precioDetal": 33000,
-      "precioMayor": 24000,
-      "descripcion": "Chanclas planas para dama, cómodas y elegantes.",
-      "fotos": ["planas1.jpg", "planas2.jpg", "planas3.jpg", "planas4.jpg", "planas5.jpg", "planas6.jpg", "planas7.jpg", "planas8.jpg"]
+      "id": "planas",
+      "nombre": "Chanclas planas",
+      "categoria": "dama",
+      "descripcion": "Comodas y elegantes para el dia a dia.",
+      "precio": null,
+      "tallas": [],
+      "fotos": [
+        "assets/catalogo_dta/dama-planas/planas1.jpg",
+        "assets/catalogo_dta/dama-planas/planas2.jpg",
+        "assets/catalogo_dta/dama-planas/planas3.jpg",
+        "assets/catalogo_dta/dama-planas/planas4.jpg",
+        "assets/catalogo_dta/dama-planas/planas5.jpg",
+        "assets/catalogo_dta/dama-planas/planas6.jpg",
+        "assets/catalogo_dta/dama-planas/planas7.jpg",
+        "assets/catalogo_dta/dama-planas/planas8.jpg"
+      ],
+      "disponible": true,
+      "destacado": true,
+      "orden": 1
     },
     {
-      "id": "dama-altas",
-      "nombre": "Dama Altas",
-      "tallas": "Dama 35 a 41",
-      "precioDetal": 40000,
-      "precioMayor": 30000,
-      "descripcion": "Chanclas altas (plataforma) para dama.",
-      "fotos": ["altas1.jpg", "altas2.jpg", "altas3.jpg", "altas4.jpg", "altas5.jpg"]
+      "id": "altas",
+      "nombre": "Chanclas altas",
+      "categoria": "dama",
+      "descripcion": "Plataforma con estilo.",
+      "precio": null,
+      "tallas": [],
+      "fotos": [
+        "assets/catalogo_dta/dama-altas/altas1.jpg",
+        "assets/catalogo_dta/dama-altas/altas2.jpg",
+        "assets/catalogo_dta/dama-altas/altas3.jpg",
+        "assets/catalogo_dta/dama-altas/altas4.jpg",
+        "assets/catalogo_dta/dama-altas/altas5.jpg"
+      ],
+      "disponible": true,
+      "destacado": false,
+      "orden": 2
     },
     {
-      "id": "altas-cruzadas",
-      "nombre": "Altas Cruzadas",
-      "tallas": "Dama 35 a 41",
-      "precioDetal": 40000,
-      "precioMayor": 32000,
-      "descripcion": "Chanclas altas cruzadas para dama.",
-      "fotos": ["cruzadas1.jpg", "cruzadas2.jpg", "cruzadas3.jpg"]
+      "id": "cruzadas",
+      "nombre": "Altas cruzadas",
+      "categoria": "dama",
+      "descripcion": "Cruzadas y comodas.",
+      "precio": null,
+      "tallas": [],
+      "fotos": [
+        "assets/catalogo_dta/altas-cruzadas/cruzadas1.jpg",
+        "assets/catalogo_dta/altas-cruzadas/cruzadas2.jpg",
+        "assets/catalogo_dta/altas-cruzadas/cruzadas3.jpg"
+      ],
+      "disponible": true,
+      "destacado": false,
+      "orden": 3
     },
     {
       "id": "caballero",
-      "nombre": "Caballero",
-      "tallas": "Caballero 37 a 44",
-      "precioDetal": 40000,
-      "precioMayor": 30000,
-      "descripcion": "Chanclas para caballero, resistentes.",
-      "fotos": ["caballero1.jpg", "caballero2.jpg", "caballero3.jpg", "caballero4.jpg", "caballero5.jpg"]
+      "nombre": "Chanclas caballero",
+      "categoria": "caballero",
+      "descripcion": "Resistentes y versatiles.",
+      "precio": null,
+      "tallas": [],
+      "fotos": [
+        "assets/catalogo_dta/caballero/caballero1.jpg",
+        "assets/catalogo_dta/caballero/caballero2.jpg",
+        "assets/catalogo_dta/caballero/caballero3.jpg",
+        "assets/catalogo_dta/caballero/caballero4.jpg",
+        "assets/catalogo_dta/caballero/caballero5.jpg"
+      ],
+      "disponible": true,
+      "destacado": false,
+      "orden": 4
     }
   ]
 }

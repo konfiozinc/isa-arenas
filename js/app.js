@@ -1,282 +1,251 @@
-/* ===========================================================
-   DTA Chanclas — Catálogo
-   Los productos se cargan desde: content/catalogo.json
-   (editable desde el panel CMS). Si el JSON no está disponible
-   (p. ej. file://), se usan los datos por defecto de abajo.
-   =========================================================== */
-const WHATSAPP_NUM = "573175821372";
-const ASESOR_NOMBRE = "Jaqueline";
-const SITIO_NOMBRE = "DTA Chanclas";
+/* ═══════════════════════════════════════════════════════════════════
+   CALZADOS ISA ARENAS · catálogo público con carrito
+   Lee el catálogo publicado desde Firestore (`catalogo/publico`); degrada
+   a `content/catalogo.json` si no hay red. El carrito vive en la sesión y
+   genera un pedido estructurado para WhatsApp.
+   ═══════════════════════════════════════════════════════════════════ */
+(function () {
+  'use strict';
+  const CFG = window.CONFIG_ISA || {};
+  const WA = (CFG.whatsapp || '573103255067');
+  const esEmulador = CFG.modo === 'emulador';
 
-const CATALOGO_DEFAULT = {
-  categorias: [
-    { id:"dama-planas", nombre:"Dama Planas", tallas:"Dama 35 a 41", precioDetal:33000, precioMayor:24000, descripcion:"Chanclas planas para dama, cómodas y elegantes.", fotos:["planas1.jpg","planas2.jpg","planas3.jpg","planas4.jpg","planas5.jpg","planas6.jpg","planas7.jpg","planas8.jpg"] },
-    { id:"dama-altas", nombre:"Dama Altas", tallas:"Dama 35 a 41", precioDetal:40000, precioMayor:30000, descripcion:"Chanclas altas (plataforma) para dama.", fotos:["altas1.jpg","altas2.jpg","altas3.jpg","altas4.jpg","altas5.jpg"] },
-    { id:"altas-cruzadas", nombre:"Altas Cruzadas", tallas:"Dama 35 a 41", precioDetal:40000, precioMayor:32000, descripcion:"Chanclas altas cruzadas para dama.", fotos:["cruzadas1.jpg","cruzadas2.jpg","cruzadas3.jpg"] },
-    { id:"caballero", nombre:"Caballero", tallas:"Caballero 37 a 44", precioDetal:40000, precioMayor:30000, descripcion:"Chanclas para caballero, resistentes.", fotos:["caballero1.jpg","caballero2.jpg","caballero3.jpg","caballero4.jpg","caballero5.jpg"] }
-  ]
-};
+  let db = null;
+  function initFirestore() {
+    try {
+      if (typeof firebase === 'undefined') return;
+      if (firebase.apps.length === 0) firebase.initializeApp(CFG.firebase || {});
+      db = firebase.firestore();
+      if (esEmulador) {
+        try { db.useEmulator(CFG.emulador.host, CFG.emulador.firestore); }
+        catch (e) { db.settings({ host: CFG.emulador.host + ':' + CFG.emulador.firestore, ssl: false, experimentalForceLongPolling: true }); }
+      }
+    } catch (e) { db = null; }
+  }
 
-let categorias = CATALOGO_DEFAULT.categorias;
+  const $ = (sel) => document.querySelector(sel);
+  const $$ = (sel) => [...document.querySelectorAll(sel)];
+  const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
-/* ── Firebase (compat) — fuente de datos en vivo ── */
-const FIREBASE_CONFIG = {
-  apiKey: "AIzaSyDHWE3OJMspi_z0CKPv8mjvjI7igum98rs",
-  authDomain: "el-titi-menu.firebaseapp.com",
-  databaseURL: "https://el-titi-menu-default-rtdb.firebaseio.com",
-  projectId: "el-titi-menu",
-  storageBucket: "el-titi-menu.firebasestorage.app",
-  messagingSenderId: "903648110789",
-  appId: "1:903648110789:web:6ac58748862dfeb5a568ac"
-};
-let fbDB = null;
-function initFirebase(){
-  try {
-    if (typeof firebase === 'undefined') return;
-    if (firebase.apps.length === 0) firebase.initializeApp(FIREBASE_CONFIG);
-    fbDB = firebase.database();
-  } catch (e) { fbDB = null; }
-}
-function fbToCategorias(obj){
-  if (!obj || typeof obj !== 'object') return [];
-  return Object.keys(obj).filter(k => obj[k]).map(k => ({ id: k, ...obj[k] }));
-}
+  function waLink(texto) { return 'https://wa.me/' + WA + '?text=' + encodeURIComponent(texto); }
+  function precio(v) { return v == null || v === '' ? null : Number(v); }
+  function precioTexto(v) { const p = precio(v); return p == null ? null : '$' + p.toLocaleString('es-CO'); }
+  function tallasDe(p) { return Array.isArray(p.tallas) ? p.tallas : (p.tallas ? String(p.tallas).split(',').map((s) => s.trim()).filter(Boolean) : []); }
 
-async function cargarProductos(){
-  return new Promise(resolve => {
-    let settled = false;
-    const finish = (fn) => { if (!settled) { settled = true; fn(); resolve(); } };
-    const local = async () => {
-      try {
-        const r = await fetch("content/catalogo.json", { cache: "no-store" });
-        if (r.ok) {
-          const d = await r.json();
-          if (d && Array.isArray(d.categorias) && d.categorias.length) categorias = d.categorias;
-        }
-      } catch (e) { /* usar datos por defecto */ }
-      finish(render);
-    };
-    if (fbDB) {
-      fbDB.ref('dta-chanclas/productos').on('value', snap => {
-        const lista = fbToCategorias(snap.val());
-        if (lista.length) {
-          categorias = JSON.parse(JSON.stringify(lista));
-          finish(render);
-        }
-      }, () => finish(local));
-      setTimeout(() => { if (!settled) finish(local); }, 5000);
-    } else {
-      finish(local);
+  // ── Carrito (sesión) ──
+  let carrito = [];
+  function cargarCarrito() { try { carrito = JSON.parse(sessionStorage.getItem('isa-carrito') || '[]') || []; } catch (e) { carrito = []; } }
+  function guardarCarrito() { try { sessionStorage.setItem('isa-carrito', JSON.stringify(carrito)); } catch (e) {} actualizarCarrito(); }
+  function enCarrito(id, talla) { return carrito.find((x) => x.id === id && (x.talla || '') === (talla || '')); }
+  function agregar(id, talla, cantidad) {
+    const p = productoPorId(id); if (!p) return;
+    const ya = enCarrito(id, talla);
+    if (ya) ya.cantidad += cantidad; else carrito.push({ id, nombre: p.nombre, precio: precio(p.precio), talla: talla || '', cantidad, foto: (p.fotos && p.fotos[0]) || '' });
+    guardarCarrito();
+  }
+  function cambiarCantidad(id, talla, delta) {
+    const x = enCarrito(id, talla); if (!x) return;
+    x.cantidad += delta; if (x.cantidad <= 0) carrito = carrito.filter((y) => y !== x);
+    guardarCarrito();
+  }
+  function quitar(id, talla) { carrito = carrito.filter((y) => !(y.id === id && (y.talla || '') === (talla || ''))); guardarCarrito(); }
+  function totalCarrito() { return carrito.reduce((s, x) => s + (x.precio || 0) * x.cantidad, 0); }
+  function haySinPrecio() { return carrito.some((x) => x.precio == null); }
+
+  function mensajePedido() {
+    const marca = (catalogoActual && catalogoActual.config && catalogoActual.config.marca) || 'Calzados ISA Arenas';
+    const lineas = carrito.map((x, i) =>
+      (i + 1) + '. ' + x.nombre + (x.talla ? ' — Talla ' + x.talla : '') + ' × ' + x.cantidad +
+      (x.precio != null ? ' = $' + (x.precio * x.cantidad).toLocaleString('es-CO') : ' (precio a confirmar)'));
+    let texto = 'Hola ' + marca + ', quiero hacer este pedido:\n\n' + lineas.join('\n');
+    if (!haySinPrecio()) texto += '\n\nTotal: $' + totalCarrito().toLocaleString('es-CO');
+    else texto += '\n\n(Algunos precios están por confirmar)';
+    return texto;
+  }
+  function enviarPedido() { if (carrito.length) window.open(waLink(mensajePedido()), '_blank'); }
+
+  // ── Estado de render ──
+  let catalogoActual = null;
+  let filtroCat = '';
+  let detalleProducto = null; let detalleTalla = ''; let detalleCantidad = 1; let idxFoto = 0;
+
+  function productoPorId(id) { return (catalogoActual && catalogoActual.productos || []).find((p) => p.id === id); }
+  function catNombre(id) { const c = (catalogoActual && catalogoActual.categorias || []).find((x) => x.id === id); return c ? c.nombre : id; }
+
+  // ── Render principal ──
+  function render(catalogo) {
+    catalogoActual = catalogo;
+    const c = catalogo.config || {};
+    document.title = c.marca || 'Calzados ISA Arenas';
+    const logo = (c.portada && c.portada.imagen) ? c.portada.imagen : 'logoisa.jpeg';
+    const logoEl = $('#logoMarca'); if (logoEl) logoEl.src = logo;
+    const nombreEl = $('#marcaNombre'); if (nombreEl) nombreEl.textContent = c.marca || 'Calzados ISA Arenas';
+    $$('.js-wa').forEach((a) => { a.href = waLink('Hola ' + (c.marca || 'Calzados ISA Arenas') + ', quiero información de sus productos.'); });
+
+    if (c.portada) {
+      const p = c.portada;
+      const h = $('#heroTitulo'); if (h) h.textContent = p.titulo || c.marca || '';
+      const s = $('#heroSub'); if (s) s.textContent = p.subtitulo || '';
+      const t = $('#heroTexto'); if (t) t.textContent = p.texto || '';
+      const m = $('#heroMedia'); if (m) m.src = p.imagen || logo;
     }
-  });
-}
-function render(){
-  buildCategorias();
-}
 
-const fmt = n => "$" + n.toLocaleString("es-CO");
+    // vídeos
+    const vids = $('#videos'); if (vids) {
+      const lista = (c.videos || []).filter((v) => v.url);
+      vids.innerHTML = '';
+      vids.parentElement.classList.toggle('hidden', !lista.length);
+      lista.forEach((v) => {
+        const card = document.createElement('div'); card.className = 'video-card';
+        card.innerHTML = '<video controls preload="metadata" playsinline><source src="' + esc(v.url) + '" type="video/mp4"></video><div class="v-body"><h3>' + esc(v.titulo || 'Video') + '</h3></div>';
+        vids.appendChild(card);
+      });
+    }
 
-function waLink(texto){
-  return `https://wa.me/${WHATSAPP_NUM}?text=${encodeURIComponent(texto)}`;
-}
-function waLinkProducto(categoriaNombre){
-  return waLink(`Hola, quiero info de ${categoriaNombre}.`);
-}
-function imgPath(catId, archivo){
-  if (!archivo) return '';
-  if (/^https?:\/\//.test(archivo) || archivo.includes('/')) return archivo;
-  return `assets/catalogo_dta/${catId}/${archivo}`;
-}
-function imgOnError(){
-  return `this.closest('.img-wrap, .carousel-img-wrap').innerHTML='<div class=\\'foto-pendiente\\'>Foto pendiente</div>'`;
-}
+    // filtros
+    const filtros = $('#filtros'); if (filtros) {
+      const cats = (catalogo.categorias || []).filter((x) => x.activa !== false);
+      filtros.innerHTML = '<button class="filtro activo" data-cat="">Todo</button>' + cats.map((x) => '<button class="filtro" data-cat="' + esc(x.id) + '">' + esc(x.nombre) + '</button>').join('');
+      filtros.querySelectorAll('.filtro').forEach((b) => b.addEventListener('click', () => {
+        filtros.querySelectorAll('.filtro').forEach((x) => x.classList.remove('activo')); b.classList.add('activo');
+        filtroCat = b.dataset.cat; renderProductos();
+      }));
+    }
 
-/* ---------- Links de WhatsApp globales ---------- */
-const linksGlobales = [
-  ["navWhatsapp", "Hola, vi el catálogo DTA y quiero hacer un pedido"],
-  ["btnWhatsappHero", "Hola, vi el catálogo DTA y quiero hacer un pedido"],
-  ["btnWhatsappFloat", "Hola, quiero hacer un pedido"],
-  ["btnWhatsappCTA", "Hola, quiero asesoría para un pedido mayorista"]
-];
-linksGlobales.forEach(([id, texto]) => {
-  const el = document.getElementById(id);
-  if(el) el.href = waLink(texto);
-});
+    renderProductos();
+    actualizarCarrito();
+  }
 
-/* ---------- Render de tarjetas de categoría ---------- */
-const categoriasGrid = document.getElementById("categoriasGrid");
-
-function buildCategorias(){
-  categoriasGrid.innerHTML = categorias.map(cat => {
-    const badge = cat.fotos.length > 4 ? 'Ver más fotos' : cat.fotos.length + ' foto' + (cat.fotos.length !== 1 ? 's' : '');
-    return `
-    <div class="categoria-card" data-cat="${cat.id}">
-      <div class="img-wrap">
-        <img src="${imgPath(cat.id, cat.fotos[0])}" alt="${cat.nombre}" loading="lazy" decoding="async" onerror="${imgOnError()}">
-        <span class="badge-count">${badge}</span>
-      </div>
-      <div class="info">
-        <h3>${cat.nombre}</h3>
-        <div class="tallas">Tallas ${cat.tallas.replace(/^\S+\s/, '')}</div>
-        <div class="precios-mini">Mayor <b>${fmt(cat.precioMayor)}</b> · Detal <b>${fmt(cat.precioDetal)}</b></div>
-        <div class="card-acciones">
-          <button class="btn-ver" data-accion="ver">Ver más</button>
-          <a class="btn-wa-card" data-accion="wa" href="${waLinkProducto(cat.nombre)}" target="_blank" rel="noopener">WhatsApp</a>
-        </div>
-      </div>
-    </div>
-  `;
-  }).join("");
-
-  categoriasGrid.querySelectorAll(".categoria-card").forEach(card => {
-    card.addEventListener("click", (e) => {
-      if (e.target.closest('[data-accion="wa"]')) return;
-      openCarousel(card.dataset.cat);
+  function renderProductos() {
+    const grid = $('#productos'); if (!grid) return;
+    const productos = (catalogoActual.productos || [])
+      .filter((p) => !filtroCat || p.categoria === filtroCat)
+      .sort((a, b) => (a.orden || 99) - (b.orden || 99));
+    grid.innerHTML = '';
+    if (!productos.length) { grid.innerHTML = '<p style="grid-column:1/-1;color:#6E5A69;text-align:center;padding:30px">No hay productos todavía.</p>'; return; }
+    productos.forEach((p) => {
+      const foto = (p.fotos && p.fotos[0]) || '';
+      const pt = precioTexto(p.precio);
+      const ficha = document.createElement('article'); ficha.className = 'ficha';
+      ficha.innerHTML =
+        '<div class="foto" style="background-image:url(' + esc(foto) + ')">' +
+        (p.destacado ? '<div class="badges"><span class="badge destacado">★</span></div>' : '') +
+        (!p.disponible ? '<div class="badges"><span class="badge agotado">Agotado</span></div>' : '') + '</div>' +
+        '<div class="fbody"><span class="fcat">' + esc(catNombre(p.categoria)) + '</span>' +
+        '<span class="fnombre">' + esc(p.nombre) + '</span>' +
+        '<span class="fprecio' + (pt ? '' : ' consultar') + '">' + (pt || 'Consultar') + '</span>' +
+        '<div class="facciones"><button class="btn-detalle" data-id="' + esc(p.id) + '" ' + (p.disponible === false ? 'disabled' : '') + '>Agregar</button></div></div>';
+      ficha.querySelector('.btn-detalle').addEventListener('click', () => abrirDetalle(p));
+      grid.appendChild(ficha);
     });
-  });
-}
-
-/* ---------- Modal Carrusel de categoría ---------- */
-const carouselOverlay = document.getElementById("carouselOverlay");
-const carouselTitle = document.getElementById("carouselTitle");
-const carouselPrecios = document.getElementById("carouselPrecios");
-const carouselImgWrap = document.getElementById("carouselImgWrap");
-const carouselDotsModal = document.getElementById("carouselDotsModal");
-const carouselWhatsapp = document.getElementById("carouselWhatsapp");
-const carouselPrev = document.getElementById("carouselPrev");
-const carouselNext = document.getElementById("carouselNext");
-
-let catActual = null;
-let indiceActual = 0;
-
-function openCarousel(catId){
-  catActual = categorias.find(c => c.id === catId);
-  indiceActual = 0;
-  carouselTitle.textContent = catActual.nombre;
-  carouselPrecios.textContent = `Tallas ${catActual.tallas} · Detal ${fmt(catActual.precioDetal)} · Mayor ${fmt(catActual.precioMayor)}${catActual.descripcion ? ' · ' + catActual.descripcion : ''}`;
-  carouselDotsModal.innerHTML = catActual.fotos.map((_, i) => `<span data-i="${i}"></span>`).join("");
-  carouselDotsModal.querySelectorAll("span").forEach(dot => {
-    dot.addEventListener("click", () => { indiceActual = Number(dot.dataset.i); renderCarouselImg(); });
-  });
-  renderCarouselImg();
-  openModal(carouselOverlay);
-}
-
-function renderCarouselImg(){
-  const archivo = catActual.fotos[indiceActual];
-  carouselImgWrap.innerHTML = `<img src="${imgPath(catActual.id, archivo)}" alt="${catActual.nombre}" loading="lazy" decoding="async" onerror="${imgOnError()}">`;
-  carouselDotsModal.querySelectorAll("span").forEach((d, i) => d.classList.toggle("active", i === indiceActual));
-  carouselWhatsapp.href = waLinkProducto(catActual.nombre);
-}
-
-carouselPrev.addEventListener("click", () => {
-  indiceActual = (indiceActual - 1 + catActual.fotos.length) % catActual.fotos.length;
-  renderCarouselImg();
-});
-carouselNext.addEventListener("click", () => {
-  indiceActual = (indiceActual + 1) % catActual.fotos.length;
-  renderCarouselImg();
-});
-
-/* Swipe táctil en el carrusel */
-let carouselTouchX = 0;
-const carouselStage = document.querySelector(".carousel-stage");
-if (carouselStage) {
-  carouselStage.addEventListener("touchstart", (e) => { carouselTouchX = e.touches[0].clientX; }, { passive: true });
-  carouselStage.addEventListener("touchend", (e) => {
-    const dx = carouselTouchX - e.changedTouches[0].clientX;
-    if (Math.abs(dx) > 40) { dx > 0 ? carouselNext.click() : carouselPrev.click(); }
-  }, { passive: true });
-}
-
-/* ---------- Modal QR / Compartir ---------- */
-const qrOverlay = document.getElementById("qrOverlay");
-const qrBox = document.getElementById("qrBox");
-const qrUrlText = document.getElementById("qrUrl");
-const btnCopy = document.getElementById("btnCopy");
-
-function openModal(overlay){ overlay.classList.add("open"); }
-function closeModal(overlay){ overlay.classList.remove("open"); }
-
-document.getElementById("btnQR").addEventListener("click", () => {
-  const url = window.location.href;
-  if(navigator.share){
-    navigator.share({ title: SITIO_NOMBRE, text: "Mira el catálogo de chanclas al por mayor", url })
-      .catch(() => showQR(url));
-  } else {
-    showQR(url);
   }
-});
 
-function showQR(url){
-  qrUrlText.textContent = url;
-  qrBox.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(url)}" alt="Código QR del catálogo">`;
-  openModal(qrOverlay);
-}
+  // ── Detalle ──
+  function abrirDetalle(p) {
+    detalleProducto = p; idxFoto = 0; detalleCantidad = 1;
+    const tallas = tallasDe(p); detalleTalla = tallas[0] || '';
+    $('#detTitulo').textContent = p.nombre;
+    $('#detCat').textContent = catNombre(p.categoria);
+    const pt = precioTexto(p.precio);
+    const pr = $('#detPrecio'); pr.textContent = pt || 'Consultar por WhatsApp'; pr.className = 'hoja-precio' + (pt ? '' : ' consultar');
+    $('#detTallasInfo').textContent = tallas.length ? 'Tallas: ' + tallas.join(', ') : '';
+    $('#detDesc').textContent = p.descripcion || '';
 
-btnCopy.addEventListener("click", () => {
-  navigator.clipboard.writeText(window.location.href).then(() => {
-    btnCopy.textContent = "¡Enlace copiado!";
-    setTimeout(() => { btnCopy.textContent = "Copiar enlace"; }, 2000);
-  });
-});
+    // selector de talla + cantidad
+    const selTallas = $('#detTallas');
+    selTallas.innerHTML = '';
+    if (tallas.length) {
+      selTallas.classList.remove('hidden');
+      selTallas.innerHTML = '<span class="lbl">Talla</span><div class="tallas">' + tallas.map((t) => '<button class="talla' + (t === detalleTalla ? ' on' : '') + '" data-talla="' + esc(t) + '">' + esc(t) + '</button>').join('') + '</div>';
+      selTallas.querySelectorAll('.talla').forEach((b) => b.addEventListener('click', () => { detalleTalla = b.dataset.talla; selTallas.querySelectorAll('.talla').forEach((x) => x.classList.toggle('on', x === b)); }));
+    } else selTallas.classList.add('hidden');
+    $('#detQty').textContent = detalleCantidad;
 
-/* ---------- Modal Guardar contacto / Instalar ---------- */
-const installOverlay = document.getElementById("installOverlay");
-document.getElementById("btnContacto").addEventListener("click", () => openModal(installOverlay));
-
-document.querySelectorAll("[data-close]").forEach(btn => {
-  btn.addEventListener("click", () => {
-    closeModal(qrOverlay);
-    closeModal(installOverlay);
-    closeModal(carouselOverlay);
-  });
-});
-[qrOverlay, installOverlay, carouselOverlay].forEach(ov => {
-  ov.addEventListener("click", e => { if(e.target === ov) closeModal(ov); });
-});
-document.addEventListener("keydown", e => {
-  if (e.key === "Escape") { closeModal(qrOverlay); closeModal(installOverlay); closeModal(carouselOverlay); }
-});
-
-/* vCard dinámica */
-const vcard = `BEGIN:VCARD
-VERSION:3.0
-N:;${ASESOR_NOMBRE};;;
-FN:${ASESOR_NOMBRE} - DTA Chanclas
-ORG:DTA Chanclas
-TEL;TYPE=CELL:+${WHATSAPP_NUM}
-NOTE:Catálogo mayorista y al detal. Bucaramanga, Colombia.
-END:VCARD`;
-const vcardBlob = new Blob([vcard], { type: "text/vcard" });
-const btnVcard = document.getElementById("btnVcard");
-btnVcard.href = URL.createObjectURL(vcardBlob);
-btnVcard.download = "DTA-Chanclas-Contacto.vcf";
-
-/* ---------- Instalación PWA ---------- */
-let deferredPrompt;
-window.addEventListener("beforeinstallprompt", (e) => {
-  e.preventDefault();
-  deferredPrompt = e;
-});
-document.getElementById("btnInstallPWA").addEventListener("click", async () => {
-  if(deferredPrompt){
-    deferredPrompt.prompt();
-    await deferredPrompt.userChoice;
-    deferredPrompt = null;
-  } else {
-    alert("Para instalar: abre el menú de tu navegador y elige 'Agregar a pantalla de inicio'.");
+    renderCarrusel((p.fotos && p.fotos.length) ? p.fotos : []);
+    $('#detalleOverlay').classList.remove('hidden');
   }
-});
+  function renderCarrusel(fotos) {
+    const stage = $('#detStage'); const dots = $('#detDots');
+    stage.innerHTML = fotos.length ? '<img src="' + esc(fotos[0]) + '" alt="">' : '<div style="height:100%;display:grid;place-items:center;color:#6E5A69">Sin fotos todavía</div>';
+    dots.innerHTML = '';
+    if (fotos.length <= 1) return;
+    fotos.forEach((f, i) => {
+      const b = document.createElement('button'); if (i === 0) b.className = 'on';
+      b.addEventListener('click', () => { idxFoto = i; stage.querySelector('img').src = f; $$('#detDots button').forEach((x, j) => x.className = j === i ? 'on' : ''); });
+      dots.appendChild(b);
+    });
+    $('#detPrev').onclick = () => mover(-1); $('#detNext').onclick = () => mover(1);
+    function mover(d) { idxFoto = (idxFoto + d + fotos.length) % fotos.length; stage.querySelector('img').src = fotos[idxFoto]; $$('#detDots button').forEach((x, j) => x.className = j === idxFoto ? 'on' : ''); }
+  }
+  function cerrarDetalle() { $('#detalleOverlay').classList.add('hidden'); }
+  function sumarCantidad(d) { detalleCantidad = Math.max(1, Math.min(99, detalleCantidad + d)); $('#detQty').textContent = detalleCantidad; }
+  function agregarDesdeDetalle() {
+    if (!detalleProducto) return;
+    const tallas = tallasDe(detalleProducto);
+    if (tallas.length && !detalleTalla) { abrirCarrito(); return; }
+    agregar(detalleProducto.id, tallas.length ? detalleTalla : '', detalleCantidad);
+    cerrarDetalle(); abrirCarrito();
+  }
 
-if("serviceWorker" in navigator){
-  window.addEventListener("load", () => {
-    navigator.serviceWorker.register("service-worker.js").catch(() => {});
+  // ── Carrito UI ──
+  function actualizarCarrito() {
+    const n = carrito.reduce((s, x) => s + x.cantidad, 0);
+    const badge = $('#cartCount'); if (badge) { badge.textContent = n; badge.classList.toggle('hidden', n === 0); }
+  }
+  function abrirCarrito() {
+    const caja = $('#carrito'); if (!caja) return;
+    caja.innerHTML = '';
+    if (!carrito.length) caja.innerHTML = '<p class="cart-empty">Tu carrito está vacío.</p>';
+    else {
+      carrito.forEach((x) => {
+        const fila = document.createElement('div'); fila.className = 'cart-item';
+        fila.innerHTML =
+          '<div class="cart-foto" style="background-image:url(' + esc(x.foto) + ')"></div>' +
+          '<div class="cart-info"><div class="cart-nombre">' + esc(x.nombre) + (x.talla ? ' · Talla ' + esc(x.talla) : '') + '</div>' +
+          '<div class="cart-precio">' + (x.precio != null ? '$' + x.precio.toLocaleString('es-CO') + ' c/u' : 'Precio a confirmar') + '</div></div>' +
+          '<div class="cart-qty"><button data-q="-" data-id="' + esc(x.id) + '" data-talla="' + esc(x.talla) + '">−</button><span>' + x.cantidad + '</span><button data-q="+" data-id="' + esc(x.id) + '" data-talla="' + esc(x.talla) + '">+</button></div>' +
+          '<button class="cart-del" data-del data-id="' + esc(x.id) + '" data-talla="' + esc(x.talla) + '">✕</button>';
+        caja.appendChild(fila);
+      });
+      const tot = document.createElement('div'); tot.className = 'cart-total';
+      tot.innerHTML = '<span>Total</span><strong>' + (haySinPrecio() ? 'a confirmar' : '$' + totalCarrito().toLocaleString('es-CO')) + '</strong>';
+      caja.appendChild(tot);
+    }
+    $('#carritoOverlay').classList.remove('hidden');
+  }
+  function cerrarCarrito() { $('#carritoOverlay').classList.add('hidden'); }
+
+  // ── Carga ──
+  async function cargar() {
+    cargarCarrito();
+    initFirestore();
+    const esPreview = /[?&]preview=1/.test(location.search);
+    let catalogo = null;
+    if (db) {
+      try {
+        const snap = await Promise.race([
+          db.collection('catalogo').doc(esPreview ? 'borrador' : 'publico').get(),
+          new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 6000))
+        ]);
+        if (snap && snap.exists) catalogo = snap.data();
+      } catch (e) { catalogo = null; }
+    }
+    if (!catalogo) {
+      try { const r = await fetch('content/catalogo.json'); catalogo = await r.json(); const a = $('#aviso'); if (a) { a.classList.remove('hidden'); a.querySelector('div').textContent = 'Vista con datos de muestra (Firestore no disponible).'; } } catch (e) { catalogo = null; }
+    }
+    if (catalogo) render(catalogo);
+  }
+
+  document.addEventListener('DOMContentLoaded', cargar);
+  document.addEventListener('click', (e) => {
+    if (e.target.closest('[data-close]')) { cerrarDetalle(); cerrarCarrito(); }
+    if (e.target.closest('#btnCart')) abrirCarrito();
+    if (e.target.closest('#btnEnviarPedido')) enviarPedido();
+    if (e.target.closest('#btnAgregar')) agregarDesdeDetalle();
+    if (e.target.closest('#detQtyMenos')) sumarCantidad(-1);
+    if (e.target.closest('#detQtyMas')) sumarCantidad(1);
+    const q = e.target.closest('[data-q]'); if (q) { cambiarCantidad(q.dataset.id, q.dataset.talla, q.dataset.q === '+' ? 1 : -1); renderCarritoTrasCambio(); }
+    const del = e.target.closest('[data-del]'); if (del) { quitar(del.dataset.id, del.dataset.talla); renderCarritoTrasCambio(); }
   });
-}
-
-/* ---------- Init ---------- */
-(async function init(){
-  initFirebase();
-  await cargarProductos();
+  function renderCarritoTrasCambio() { abrirCarrito(); }
 })();

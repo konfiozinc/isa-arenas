@@ -1,12 +1,12 @@
-/* Service worker — DTA Chanclas (catálogo) */
-const CACHE_NAME = 'dta-catalogo-v1';
+/* Service worker — Calzados ISA Arenas (catálogo) */
+const CACHE_NAME = 'isa-arenas-v1';
 const PRECACHE_URLS = [
   './',
   './index.html',
   './css/styles.css',
   './js/app.js',
   './manifest.json',
-  './assets/logo/dta-logo.png'
+  './assets/logo/logoisa.jpeg'
 ];
 
 self.addEventListener('install', (event) => {
