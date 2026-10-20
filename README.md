@@ -18,12 +18,16 @@ real, roles separados).
   `content/catalogo.json`.
 - **Panel** (`admin.html`, `js/admin.js`): edita `catalogo/borrador` y publica
   copiándolo a `catalogo/publico`. Subida de fotos por Cloudinary (preset sin
-  firma).
+  firma, solo accesible desde el panel autenticado).
 - **Roles** (`usuarios/{uid}` con campo `rol`):
   - `isa` → administra su catálogo y publica.
   - `konfio` → igual + lista/gestiona usuarios (superadmin).
 - **Reglas** en `firestore.rules`: lectura pública del catálogo publicado;
-  escritura solo para administradores autenticados con rol.
+  escritura solo para administradores autenticados con rol. Verificadas con
+  `herramientas/probar-reglas.cjs` (11 accesos autorizados/denegados).
+- **Vista previa**: `index.html?preview=1` muestra el borrador SOLO a un
+  administrador con sesión iniciada; para el público lee únicamente lo
+  publicado.
 
 ## Datos (Firestore)
 ```
@@ -55,18 +59,29 @@ Credenciales demo (ficticias, solo emulador):
 
 ## Pruebas
 ```powershell
+node herramientas/probar-reglas.cjs   # reglas Firestore: accesos autorizados/denegados
 node herramientas/probar-isa.cjs      # CRUD + publicación + persistencia
 node herramientas/probar-carrito.cjs  # carrito, tallas, totales, WhatsApp
 node herramientas/probar-acceso.cjs   # roles y acceso no autorizado
 node herramientas/capturar-isa.cjs    # capturas móvil/escritorio + panel
 ```
 
+## Cloudinary (subida de fotos)
+La subida usa un preset **sin firma** (adecuado para sitio estático). La
+integridad del catálogo no depende de Cloudinary: solo un admin autenticado
+puede guardar la URL en Firestore. Para limitar el abuso de cuota del preset
+compartido, configurar en la consola de Cloudinary (Settings → Upload → preset
+`menu-digital`): carpeta, formatos (jpg/png/webp) y tamaño máximo.
+
 ## Pendiente para publicación (requiere autorización)
 1. Crear el proyecto Firebase dedicado de ISA y pegar sus claves públicas en
    `config-isa.js` (marcadores `API_KEY_ISA` / `APP_ID_ISA`) y cambiar
    `modo: 'emulador'` → `'produccion'`.
 2. Crear las cuentas de Auth (ISA y KONFÍO) y sus documentos de rol en
-   `usuarios/` (script `scripts/crear-usuario.mjs` con Admin SDK, o consola).
+   `usuarios/`. En local: `node scripts/crear-usuario.mjs <email> <isa|konfio>`
+   (la contraseña va por parámetro/env, nunca en el código). En producción se
+   recomienda Firebase Console (Authentication + Firestore), sin contraseñas en
+   el repo.
 3. Desplegar `firestore.rules` (`firebase deploy --only firestore:rules`).
 4. Cambiar la URL/repositorio cuando el propietario lo comunique (el código
    usa rutas relativas y una sola constante de WhatsApp; solo se actualiza

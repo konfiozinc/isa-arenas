@@ -10,17 +10,19 @@
   const WA = (CFG.whatsapp || '573103255067');
   const esEmulador = CFG.modo === 'emulador';
 
-  let db = null;
+  let db = null, auth = null;
   function initFirestore() {
     try {
       if (typeof firebase === 'undefined') return;
       if (firebase.apps.length === 0) firebase.initializeApp(CFG.firebase || {});
       db = firebase.firestore();
+      auth = (typeof firebase.auth === 'function') ? firebase.auth() : null;
       if (esEmulador) {
         try { db.useEmulator(CFG.emulador.host, CFG.emulador.firestore); }
         catch (e) { db.settings({ host: CFG.emulador.host + ':' + CFG.emulador.firestore, ssl: false, experimentalForceLongPolling: true }); }
+        if (auth) { try { auth.useEmulator('http://' + CFG.emulador.host + ':' + CFG.emulador.auth); } catch (e) {} }
       }
-    } catch (e) { db = null; }
+    } catch (e) { db = null; auth = null; }
   }
 
   const $ = (sel) => document.querySelector(sel);
@@ -216,15 +218,31 @@
   function cerrarCarrito() { $('#carritoOverlay').classList.add('hidden'); }
 
   // ── Carga ──
+  // La vista previa muestra el borrador SOLO a un administrador autenticado;
+  // el público (y un preview anónimo) lee únicamente la versión publicada.
+  function esAdminSesion() {
+    return new Promise((res) => {
+      if (!auth) return res(false);
+      const t = setTimeout(() => { unsub(); res(false); }, 4000);
+      const unsub = auth.onAuthStateChanged((u) => {
+        clearTimeout(t); unsub();
+        if (!u) return res(false);
+        db.collection('usuarios').doc(u.uid).get()
+          .then((s) => res(s.exists && ['isa', 'konfio'].indexOf(s.data().rol) >= 0))
+          .catch(() => res(false));
+      });
+    });
+  }
   async function cargar() {
     cargarCarrito();
     initFirestore();
     const esPreview = /[?&]preview=1/.test(location.search);
+    const docId = (esPreview && await esAdminSesion()) ? 'borrador' : 'publico';
     let catalogo = null;
     if (db) {
       try {
         const snap = await Promise.race([
-          db.collection('catalogo').doc(esPreview ? 'borrador' : 'publico').get(),
+          db.collection('catalogo').doc(docId).get(),
           new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 6000))
         ]);
         if (snap && snap.exists) catalogo = snap.data();

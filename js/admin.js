@@ -168,13 +168,19 @@
   }
 
   // ── Fotos (Cloudinary) ──
+  // Subida con preset SIN FIRMA (apto para sitio estático). La integridad del
+  // catálogo NO depende de Cloudinary: solo un admin autenticado puede guardar
+  // la URL en Firestore (reglas `catalogo/*` → esAdmin()). Para evitar abuso
+  // de cuota del preset compartido, restringirlo en la consola de Cloudinary
+  // (Settings → Upload → presets): carpeta, formatos (jpg/png/webp) y tamaño.
   function agregarFoto(ev) {
     const file = ev.target.files[0]; if (!file) return;
+    if (!estado.usuario) { toast('Sesión expirada: vuelve a entrar.'); render(); return; }
     if (!file.type.startsWith('image/')) { toast('Selecciona una imagen válida'); return; }
     if (file.size > 5 * 1024 * 1024) { toast('Imagen muy grande (máx 5 MB)'); return; }
     estado.guardando = true; render();
     comprimir(file, 1000, 0.82).then((blob) => {
-      const fd = new FormData(); fd.append('file', blob, 'producto.jpg'); fd.append('upload_preset', CFG.cloudinary.uploadPreset);
+      const fd = new FormData(); fd.append('file', blob, 'producto.jpg'); fd.append('upload_preset', CFG.cloudinary.uploadPreset); fd.append('tags', 'isa-arenas');
       return fetch('https://api.cloudinary.com/v1_1/' + CFG.cloudinary.cloudName + '/image/upload', { method: 'POST', body: fd }).then((r) => r.json());
     }).then((d) => {
       if (!d.secure_url) throw new Error((d.error && d.error.message) || 'No se pudo subir');
