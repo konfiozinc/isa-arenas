@@ -11,7 +11,7 @@ const ok = (c, n, d = '') => { pasos++; if (!c) fallos++; console.log(`  [${c ? 
   const pag = await ctx.newPage();
 
   // 1) contraseña incorrecta → error y sin panel
-  await pag.goto(BASE + 'admin.html', { waitUntil: 'load' });
+  await pag.goto(BASE + 'admin.html?emulador=1', { waitUntil: 'load' });
   await pag.waitForTimeout(700);
   await pag.fill('#email', 'isa@demo.local');
   await pag.fill('#password', 'clave-incorrecta');

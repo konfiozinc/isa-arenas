@@ -13,7 +13,7 @@ const ok = (c, n, d = '') => { pasos++; if (!c) fallos++; console.log(`  [${c ? 
   const pag = await ctx.newPage();
 
   // 1) preparar: crear producto con tallas y precio + marcar "planas" agotado
-  await pag.goto(BASE + 'admin.html', { waitUntil: 'load' });
+  await pag.goto(BASE + 'admin.html?emulador=1', { waitUntil: 'load' });
   await pag.waitForTimeout(700);
   await pag.fill('#email', 'isa@demo.local'); await pag.fill('#password', 'DemoIsa2026'); await pag.click('#btnLogin');
   await pag.waitForTimeout(1400);
@@ -30,7 +30,7 @@ const ok = (c, n, d = '') => { pasos++; if (!c) fallos++; console.log(`  [${c ? 
   await pag.click('#btnPublish'); await pag.waitForTimeout(1200);
 
   // 2) sitio público
-  await pag.goto(BASE + 'index.html', { waitUntil: 'load' });
+  await pag.goto(BASE + 'index.html?emulador=1', { waitUntil: 'load' });
   await pag.waitForTimeout(1200);
   ok(await pag.evaluate(() => document.body.textContent.includes('Chanclas niña rosa')), 'producto nuevo visible');
   ok(await pag.evaluate(() => document.body.textContent.includes('25.000')), 'precio $25.000 visible');

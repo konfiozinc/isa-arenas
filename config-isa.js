@@ -3,19 +3,21 @@
 
    Fuente de verdad para el sitio público y el panel. Aquí se cambia:
      · la marca y el WhatsApp,
-     · el proyecto Firebase (Auth + Firestore),
+     · el proyecto Firebase dedicado de ISA (Auth + Firestore),
      · Cloudinary (subida de fotos sin secretos, preset sin firma),
-     · el modo de ejecución: 'emulador' (desarrollo local) o 'produccion'.
+     · el modo de ejecución: 'produccion' (por defecto) o 'emulador'
+       (desarrollo/pruebas locales: añade ?emulador=1 a la URL).
 
-   ⚠️ SECRETOS: los apiKey/AppId de Firebase Web son públicos por diseño
+   ⚠️ SECRETOS: apiKey/AppId de Firebase Web son públicos por diseño
    (identifican la app, no autorizan por sí solos: la autorización la dan
-   las Reglas de Firestore y Firebase Auth). No pongas aquí claves de
+   las Reglas de Firestore y Firebase Auth). NO pongas aquí claves de
    servicio, tokens de admin ni contraseñas.
-
-   PENDIENTE AL DESPLEGAR (no tocar antes de autorización): sustituir los
-   marcadores API_KEY_ISA / APP_ID_ISA por los valores reales del proyecto
-   Firebase dedicado de ISA, y cambiar `modo` a 'produccion'.
    ═══════════════════════════════════════════════════════════════════ */
+
+// Permite forzar emulador para desarrollo/pruebas: index.html?emulador=1
+const __q = new URLSearchParams(window.location.search);
+const __modo = __q.get('emulador') === '1' ? 'emulador' : 'produccion';
+
 window.CONFIG_ISA = {
   marca: 'Calzados ISA Arenas',
   eslogan: 'Boutique digital de calzado',
@@ -23,18 +25,21 @@ window.CONFIG_ISA = {
   telefono: '310 325 5067',
   cloudinary: {
     cloudName: 'f07x0wga',           // Cloudinary de la agencia (sin firma)
-    uploadPreset: 'menu-digital'
+    // Preset DEDICADO a ISA (separado del de otros clientes). Hay que crearlo
+    // en la consola de Cloudinary con carpeta/formatos/peso (ver README).
+    uploadPreset: 'isa-arenas'
   },
   firebase: {
-    apiKey: 'API_KEY_ISA',
+    apiKey: 'AIzaSyDWGO2YtkELMRTYYSb4Rq2Mc40dpyMQYso',
     authDomain: 'isa-arenas.firebaseapp.com',
     projectId: 'isa-arenas',
-    storageBucket: 'isa-arenas.appspot.com',
-    messagingSenderId: '000000000000',
-    appId: 'APP_ID_ISA'
+    storageBucket: 'isa-arenas.firebasestorage.app',
+    messagingSenderId: '37485490647',
+    appId: '1:37485490647:web:c5faf32c60e283a6c4db92'
   },
-  // 'emulador' usa Auth y Firestore locales (nada toca producción).
-  modo: 'emulador',
+  // 'produccion' apunta al proyecto real de ISA; 'emulador' (o ?emulador=1)
+  // usa Auth y Firestore locales sin tocar producción.
+  modo: __modo,
   emulador: { host: '127.0.0.1', firestore: 8080, auth: 9099 },
   roles: { isa: 'isa', konfio: 'konfio' }
 };

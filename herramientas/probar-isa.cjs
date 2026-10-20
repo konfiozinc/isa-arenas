@@ -22,7 +22,7 @@ const dormir = (ms) => new Promise((r) => setTimeout(r, ms));
   pag.on('pageerror', (e) => errores.push(e.message));
 
   console.log('\n═══ 1 · Sitio público (catálogo desde Firestore) ═══');
-  await pag.goto(BASE + 'index.html', { waitUntil: 'load' });
+  await pag.goto(BASE + 'index.html?emulador=1', { waitUntil: 'load' });
   await pag.waitForTimeout(1200);
   const publico = await pag.evaluate(() => ({
     titulo: document.title,
@@ -39,7 +39,7 @@ const dormir = (ms) => new Promise((r) => setTimeout(r, ms));
   ok(/wa\.me\/573103255067/.test(publico.whatsapp || ''), 'WhatsApp ISA 310 325 5067', publico.whatsapp);
 
   console.log('\n═══ 2 · Login del panel como ISA ═══');
-  await pag.goto(BASE + 'admin.html', { waitUntil: 'load' });
+  await pag.goto(BASE + 'admin.html?emulador=1', { waitUntil: 'load' });
   await pag.waitForTimeout(800);
   await pag.fill('#email', 'isa@demo.local');
   await pag.fill('#password', 'DemoIsa2026');
@@ -74,7 +74,7 @@ const dormir = (ms) => new Promise((r) => setTimeout(r, ms));
   console.log('\n═══ 4 · Publicar y ver en el sitio público ═══');
   await pag.click('#btnPublish');
   await pag.waitForTimeout(1200);
-  await pag.goto(BASE + 'index.html', { waitUntil: 'load' });
+  await pag.goto(BASE + 'index.html?emulador=1', { waitUntil: 'load' });
   await pag.waitForTimeout(1200);
   const trasPublicar = await pag.evaluate(() => ({
     tieneNinos: document.body.textContent.includes('Niños'),
@@ -86,7 +86,7 @@ const dormir = (ms) => new Promise((r) => setTimeout(r, ms));
   ok(trasPublicar.precio, 'precio publicado visible ($25.000)', '');
 
   console.log('\n═══ 5 · Persistencia tras cerrar y volver a entrar ═══');
-  await pag.goto(BASE + 'admin.html', { waitUntil: 'load' });
+  await pag.goto(BASE + 'admin.html?emulador=1', { waitUntil: 'load' });
   await pag.waitForTimeout(900);
   // cerrar sesión
   const btnSalir = await pag.$('#btnLogout');

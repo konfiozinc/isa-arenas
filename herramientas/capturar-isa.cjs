@@ -12,7 +12,7 @@ const OUT = 'C:/KZ-EVIDENCIA/isa-arenas';
   for (const ancho of [375, 1440]) {
     const ctx = await nav.newContext({ viewport: { width: ancho, height: ancho <= 768 ? 812 : 900 }, reducedMotion: 'reduce', locale: 'es-CO' });
     const pag = await ctx.newPage();
-    await pag.goto(BASE + 'index.html', { waitUntil: 'load' });
+    await pag.goto(BASE + 'index.html?emulador=1', { waitUntil: 'load' });
     await pag.waitForTimeout(1500);
     await pag.screenshot({ path: `${OUT}/catalogo-${ancho}.png` });
     await pag.screenshot({ path: `${OUT}/catalogo-${ancho}-completa.png`, fullPage: true });
@@ -22,7 +22,7 @@ const OUT = 'C:/KZ-EVIDENCIA/isa-arenas';
   // panel: login + dashboard
   const ctx = await nav.newContext({ viewport: { width: 1440, height: 900 }, reducedMotion: 'reduce', locale: 'es-CO' });
   const pag = await ctx.newPage();
-  await pag.goto(BASE + 'admin.html', { waitUntil: 'load' });
+  await pag.goto(BASE + 'admin.html?emulador=1', { waitUntil: 'load' });
   await pag.waitForTimeout(700);
   await pag.screenshot({ path: `${OUT}/panel-login.png` });
   await pag.fill('#email', 'isa@demo.local'); await pag.fill('#password', 'DemoIsa2026'); await pag.click('#btnLogin');

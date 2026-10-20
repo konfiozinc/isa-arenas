@@ -39,6 +39,9 @@ Producto: `{ id, nombre, categoria, descripcion, precio (null=consultar),
 tallas ([]), fotos[], video, destacado, disponible }`.
 
 ## Entorno local (emuladores, sin tocar producción)
+Por defecto el proyecto apunta a **producción** (`modo: 'produccion'`). Para
+desarrollo/pruebas locales se usan los emuladores añadiendo `?emulador=1` a la
+URL (o las pruebas ya lo hacen por ti).
 ```powershell
 # 1) Requisitos: Node.js · firebase-tools (ya instalado) · Java (JBR de Android Studio)
 $env:JAVA_HOME = "C:\Program Files\Android\Android Studio\jbr"
@@ -52,6 +55,7 @@ node scripts/sembrar-emulador.mjs
 
 # 4) Servir el sitio (otra terminal)
 node herramientas/servir.js 5170
+#    → abre http://127.0.0.1:5170/index.html?emulador=1
 ```
 Credenciales demo (ficticias, solo emulador):
 - ISA → `isa@demo.local` / `DemoIsa2026`
@@ -59,32 +63,48 @@ Credenciales demo (ficticias, solo emulador):
 
 ## Pruebas
 ```powershell
-node herramientas/probar-reglas.cjs   # reglas Firestore: accesos autorizados/denegados
-node herramientas/probar-isa.cjs      # CRUD + publicación + persistencia
-node herramientas/probar-carrito.cjs  # carrito, tallas, totales, WhatsApp
-node herramientas/probar-acceso.cjs   # roles y acceso no autorizado
-node herramientas/capturar-isa.cjs    # capturas móvil/escritorio + panel
+node herramientas/probar-reglas.cjs        # reglas: accesos autorizados/denegados (emulador)
+node herramientas/probar-isa.cjs           # CRUD + publicación + persistencia (emulador)
+node herramientas/probar-carrito.cjs       # carrito, tallas, totales, WhatsApp (emulador)
+node herramientas/probar-acceso.cjs        # roles y acceso no autorizado (emulador)
+node herramientas/probar-produccion.mjs    # conexión REAL: apiKey + reglas desplegadas (producción)
+node herramientas/capturar-isa.cjs         # capturas móvil/escritorio + panel (emulador)
 ```
 
 ## Cloudinary (subida de fotos)
-La subida usa un preset **sin firma** (adecuado para sitio estático). La
-integridad del catálogo no depende de Cloudinary: solo un admin autenticado
-puede guardar la URL en Firestore. Para limitar el abuso de cuota del preset
-compartido, configurar en la consola de Cloudinary (Settings → Upload → preset
-`menu-digital`): carpeta, formatos (jpg/png/webp) y tamaño máximo.
+La subida usa un preset **sin firma** (adecuado para sitio estático sin backend).
+La integridad del catálogo no depende de Cloudinary: solo un admin autenticado
+puede guardar la URL en Firestore.
 
-## Pendiente para publicación (requiere autorización)
-1. Crear el proyecto Firebase dedicado de ISA y pegar sus claves públicas en
-   `config-isa.js` (marcadores `API_KEY_ISA` / `APP_ID_ISA`) y cambiar
-   `modo: 'emulador'` → `'produccion'`.
-2. Crear las cuentas de Auth (ISA y KONFÍO) y sus documentos de rol en
-   `usuarios/`. En local: `node scripts/crear-usuario.mjs <email> <isa|konfio>`
-   (la contraseña va por parámetro/env, nunca en el código). En producción se
-   recomienda Firebase Console (Authentication + Firestore), sin contraseñas en
-   el repo.
-3. Desplegar `firestore.rules` (`firebase deploy --only firestore:rules`).
-4. Cambiar la URL/repositorio cuando el propietario lo comunique (el código
-   usa rutas relativas y una sola constante de WhatsApp; solo se actualiza
-   `canonical`/`og:url` y el nombre del repo).
+El código apunta al preset **dedicado `isa-arenas`** (aislado del de otros
+clientes). Hay que crearlo en la consola de Cloudinary con estas restricciones:
+
+1. **Cloudinary Console → Settings → Upload → Add upload preset**
+   - Nombre: `isa-arenas`
+   - Signing Mode: **Unsigned**
+   - **Folder**: `isa-arenas`
+   - **Allowed formats**: solo imágenes (`jpg`, `png`, `webp`)
+   - **Max file size**: `5 MB` (coincide con el límite del panel)
+   - (Opcional) Incoming transformation para recomprimir.
+
+> Importante: un preset *unsigned* no puede impedir del todo que un tercero
+> suba (cualquiera con el nombre del preset puede hacer POST). Las restricciones
+> limitan el alcance (carpeta/formatos/peso). Para **bloquear anónimos por
+> completo** se necesita firma firmada (backend/Cloud Function), que implicaría
+> el plan Blaze (fuera de alcance). La protección real del contenido la dan las
+> reglas de Firestore: solo un admin puede publicar la URL.
+
+## Puesta en marcha (producción)
+1. ✅ Proyecto `isa-arenas` (Spark) y `config-isa.js` con las claves reales;
+   `modo:'produccion'`.
+2. ✅ Reglas desplegadas (`firebase deploy --only firestore:rules`) y verificadas
+   en producción con `probar-produccion.mjs`.
+3. ⏳ Crear las cuentas de Auth (ISA y KONFÍO) y su rol en `usuarios/{uid}`.
+   Sin contraseñas en el repo: en Firebase Console (Authentication → Add user;
+   luego Firestore → `usuarios/<UID>` con `{ email, nombre, rol }`), o con
+   `scripts/crear-usuario.mjs` en local.
+4. ⏳ Crear el preset Cloudinary `isa-arenas` (ver sección anterior).
+5. ⏳ Desplegar GitHub Pages SOLO con autorización del propietario (sin push a
+   `main` hasta entonces).
 
 **No se publica nada sin autorización expresa.**

@@ -4,7 +4,8 @@
 # Security Rules y restringidas por referrer en Google Cloud):
 #   - konfio-zinc   (analitica Firestore de la agencia)
 #   - el-titi-menu  (proyecto compartido de menus y catalogos)
-KNOWN_KEYS="AIzaSyDbwAk9APwP2SeaEfWxeQG_bdL9eatciEA AIzaSyDHWE3OJMspi_z0CKPv8mjvjI7igum98rs"
+#   - isa-arenas    (proyecto dedicado de Calzados ISA Arenas)
+KNOWN_KEYS="AIzaSyDbwAk9APwP2SeaEfWxeQG_bdL9eatciEA AIzaSyDHWE3OJMspi_z0CKPv8mjvjI7igum98rs AIzaSyDWGO2YtkELMRTYYSb4Rq2Mc40dpyMQYso"
 
 # Solo lineas ANADIDAS (sin contexto) para evitar falsos positivos por lineas vecinas.
 added=$(git diff --cached --diff-filter=ACM -U0 | grep -E '^\+[^+]' | grep -oE 'AIza[0-9A-Za-z_-]{35}' | sort -u)
