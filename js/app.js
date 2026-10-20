@@ -9,6 +9,7 @@
   const CFG = window.CONFIG_ISA || {};
   const WA = (CFG.whatsapp || '573103255067');
   const esEmulador = CFG.modo === 'emulador';
+  const MIN_PARES = (CFG.minimoPares || 6);
 
   let db = null, auth = null;
   function initFirestore() {
@@ -52,6 +53,7 @@
   }
   function quitar(id, talla) { carrito = carrito.filter((y) => !(y.id === id && (y.talla || '') === (talla || ''))); guardarCarrito(); }
   function totalCarrito() { return carrito.reduce((s, x) => s + (x.precio || 0) * x.cantidad, 0); }
+  function totalPares() { return carrito.reduce((s, x) => s + x.cantidad, 0); }
   function haySinPrecio() { return carrito.some((x) => x.precio == null); }
 
   function mensajePedido() {
@@ -64,7 +66,13 @@
     else texto += '\n\n(Algunos precios están por confirmar)';
     return texto;
   }
-  function enviarPedido() { if (carrito.length) window.open(waLink(mensajePedido()), '_blank'); }
+  // El botón de pedido exige el mínimo mayorista; el WhatsApp flotante sigue
+  // disponible para consultas generales (no para cerrar el pedido).
+  function enviarPedido() {
+    if (!carrito.length) return;
+    if (totalPares() < MIN_PARES) { actualizarMinimo(); return; }
+    window.open(waLink(mensajePedido()), '_blank');
+  }
 
   // ── Estado de render ──
   let catalogoActual = null;
@@ -190,9 +198,17 @@
   }
 
   // ── Carrito UI ──
+  function actualizarMinimo() {
+    const total = totalPares();
+    const aviso = $('#cartMinAviso');
+    const btn = $('#btnEnviarPedido');
+    if (aviso) aviso.classList.toggle('hidden', !(total > 0 && total < MIN_PARES));
+    if (btn) btn.disabled = total < MIN_PARES;
+  }
   function actualizarCarrito() {
     const n = carrito.reduce((s, x) => s + x.cantidad, 0);
     const badge = $('#cartCount'); if (badge) { badge.textContent = n; badge.classList.toggle('hidden', n === 0); }
+    actualizarMinimo();
   }
   function abrirCarrito() {
     const caja = $('#carrito'); if (!caja) return;
@@ -214,6 +230,7 @@
       caja.appendChild(tot);
     }
     $('#carritoOverlay').classList.remove('hidden');
+    actualizarMinimo();
   }
   function cerrarCarrito() { $('#carritoOverlay').classList.add('hidden'); }
 

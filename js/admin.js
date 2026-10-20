@@ -168,12 +168,13 @@
   }
 
   // ── Fotos (Cloudinary) ──
-  // Subida con preset SIN FIRMA (apto para sitio estático). La integridad del
-  // catálogo NO depende de Cloudinary: solo un admin autenticado puede guardar
-  // la URL en Firestore (reglas `catalogo/*` → esAdmin()). Para evitar abuso
-  // de cuota del preset compartido, restringirlo en la consola de Cloudinary
-  // (Settings → Upload → presets): carpeta, formatos (jpg/png/webp) y tamaño.
+  // Subida DESHABILITADA temporalmente (CFG.cloudinary.habilitado === false)
+  // hasta disponer de un mecanismo de carga protegido. La integridad del
+  // catálogo no depende de Cloudinary: solo un admin autenticado puede guardar
+  // la URL en Firestore (reglas `catalogo/*` → esAdmin()).
+  function subidasHabilitadas() { return !!(CFG.cloudinary && CFG.cloudinary.habilitado); }
   function agregarFoto(ev) {
+    if (!subidasHabilitadas()) { toast('Subida de fotos deshabilitada temporalmente.'); return; }
     const file = ev.target.files[0]; if (!file) return;
     if (!estado.usuario) { toast('Sesión expirada: vuelve a entrar.'); render(); return; }
     if (!file.type.startsWith('image/')) { toast('Selecciona una imagen válida'); return; }
@@ -295,9 +296,12 @@
       const f = estado.form;
       const fotos = f.fotos.map((u, i) => '<div class="foto-item" style="background-image:url(' + u + ')"><button class="foto-del" data-foto="' + i + '">✕</button></div>').join('');
       const cats = estado.categorias.map((c) => '<option value="' + c.id + '"' + (f.categoria === c.id ? ' selected' : '') + '>' + esc(c.nombre) + '</option>').join('');
+      const subidaFoto = subidasHabilitadas()
+        ? '<input type="file" id="fotoFile" accept="image/*">' + (estado.guardando ? '<div style="color:#2E8CA5;margin-top:4px">Subiendo…</div>' : '')
+        : '<div class="sub" style="margin-top:6px">Subida de fotos deshabilitada temporalmente.</div>';
       return '<div class="overlay"><div class="sheet"><div class="sheet-head"><h2>' + (estado.editandoId ? 'Editar producto' : 'Nuevo producto') + '</h2><button data-close>✕</button></div>' +
         '<div class="field"><label>Fotos</label><div class="fotos-grid">' + fotos + '</div>' +
-        '<input type="file" id="fotoFile" accept="image/*">' + (estado.guardando ? '<div style="color:#2E8CA5;margin-top:4px">Subiendo…</div>' : '') + '</div>' +
+        subidaFoto + '</div>' +
         '<div class="field"><label>Nombre</label><input id="f-nombre" value="' + esc(f.nombre) + '"></div>' +
         '<div class="field"><label>Categoría</label><select id="f-categoria">' + cats + '</select></div>' +
         '<div class="field"><label>Descripción</label><textarea id="f-desc" rows="2">' + esc(f.descripcion) + '</textarea></div>' +

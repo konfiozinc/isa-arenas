@@ -20,14 +20,17 @@ const __modo = __q.get('emulador') === '1' ? 'emulador' : 'produccion';
 
 window.CONFIG_ISA = {
   marca: 'Calzados ISA Arenas',
-  eslogan: 'Boutique digital de calzado',
+  eslogan: 'Catálogo mayorista de calzado',
   whatsapp: '573103255067',          // 310 325 5067
   telefono: '310 325 5067',
+  minimoPares: 6,                    // venta al por mayor: mínimo de pares por pedido
   cloudinary: {
     cloudName: 'f07x0wga',           // Cloudinary de la agencia (sin firma)
     // Preset DEDICADO a ISA (separado del de otros clientes). Hay que crearlo
     // en la consola de Cloudinary con carpeta/formatos/peso (ver README).
-    uploadPreset: 'isa-arenas'
+    uploadPreset: 'isa-arenas',
+    // Subida DESHABILITADA hasta disponer de un mecanismo de carga protegido.
+    habilitado: false
   },
   firebase: {
     apiKey: 'AIzaSyDWGO2YtkELMRTYYSb4Rq2Mc40dpyMQYso',

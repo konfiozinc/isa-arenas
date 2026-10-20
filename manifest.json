@@ -1,7 +1,7 @@
 {
   "name": "Calzados ISA Arenas - Catálogo Digital",
   "short_name": "Calzados ISA Arenas",
-  "description": "Catálogo mayorista y al detal de chanclas. Boutique digital de calzado.",
+  "description": "Catálogo mayorista de calzado con envíos a toda Colombia.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

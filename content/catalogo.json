@@ -1,14 +1,14 @@
 {
   "config": {
     "marca": "Calzados ISA Arenas",
-    "eslogan": "Boutique digital de calzado",
+    "eslogan": "Catálogo mayorista de calzado",
     "whatsapp": "573103255067",
     "telefono": "310 325 5067",
     "ubicacion": "",
     "portada": {
-      "titulo": "Calzados ISA Arenas",
-      "subtitulo": "Estilo y comodidad para tu día a día",
-      "texto": "Explora nuestras líneas y escríbenos para pedir la tuya.",
+      "titulo": "Catálogo Mayorista",
+      "subtitulo": "Venta al por mayor · Envíos a toda Colombia",
+      "texto": "Mínimo 6 pares por pedido. Envíos a toda Colombia.",
       "imagen": "logoisa.jpeg"
     },
     "videos": [

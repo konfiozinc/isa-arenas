@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════════
-   CALZADOS ISA ARENAS · boutique digital
+   CALZADOS ISA ARENAS · catálogo mayorista
    Identidad: rosa #FC95DE + turquesa #8AC8D7 (tomados del logo).
    Mobile-first · sin dependencias externas · respeta reduced-motion.
    ═══════════════════════════════════════════════════════════════════ */
@@ -111,6 +111,8 @@ button{font-family:inherit;cursor:pointer}
 .cart-del{border:none;background:none;color:var(--rosa-fuerte);font-size:15px;padding:6px}
 .cart-total{display:flex;justify-content:space-between;align-items:center;border-top:1.5px solid var(--line);padding-top:14px;font-weight:800}
 .cart-total strong{font-size:1.1rem;color:var(--rosa-fuerte)}
+.cart-min-aviso{margin-top:12px;padding:10px 12px;border-radius:12px;background:#FFF3E0;border:1.5px solid #F2B24A;color:#8A5A00;font-size:.82rem;font-weight:700;text-align:center}
+#btnEnviarPedido:disabled{opacity:.55;cursor:not-allowed;box-shadow:none;transform:none}
 
 /* ── Tallas y cantidad en el detalle ── */
 .tallas-wrap{margin-top:14px}

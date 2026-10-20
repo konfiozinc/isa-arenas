@@ -1,6 +1,6 @@
 # Calzados ISA Arenas — Catálogo digital
 
-Catálogo tipo boutique para **CALZADOS ISA ARENAS** (WhatsApp 310 325 5067),
+Catálogo mayorista para **CALZADOS ISA ARENAS** (WhatsApp 310 325 5067),
 reconstruido sobre el proyecto DTA Chanclas. Sitio público estático (GitHub
 Pages) + panel de administración con **Firebase Auth + Firestore** (persistencia
 real, roles separados).
@@ -17,8 +17,12 @@ real, roles separados).
   `catalogo/publico` de Firestore; si no hay red, degrada a
   `content/catalogo.json`.
 - **Panel** (`admin.html`, `js/admin.js`): edita `catalogo/borrador` y publica
-  copiándolo a `catalogo/publico`. Subida de fotos por Cloudinary (preset sin
-  firma, solo accesible desde el panel autenticado).
+  copiándolo a `catalogo/publico`. Subida de fotos por Cloudinary **temporalmente
+  deshabilitada** (`cloudinary.habilitado: false`).
+- **Carrito mayorista**: venta al por mayor, **mínimo 6 pares por pedido** (el
+  total del carrito, no por referencia). Menos de 6 → botón de pedido bloqueado
+  con aviso «Los pedidos son al por mayor, mínimo 6 pares». El WhatsApp flotante
+  sigue abierto para consultas generales.
 - **Roles** (`usuarios/{uid}` con campo `rol`):
   - `isa` → administra su catálogo y publica.
   - `konfio` → igual + lista/gestiona usuarios (superadmin).
