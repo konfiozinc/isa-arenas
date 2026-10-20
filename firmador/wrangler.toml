@@ -1,0 +1,8 @@
+# Firmador Cloudinary de ISA ARENAS (subida firmada en servidor)
+# Deploy:  cd firmador && npx wrangler deploy
+# Secretos (NO van en este archivo ni en el repo):
+#   npx wrangler secret put CLOUDINARY_API_KEY
+#   npx wrangler secret put CLOUDINARY_API_SECRET
+name = "isa-arenas-firmador"
+main = "worker.js"
+compatibility_date = "2026-01-01"

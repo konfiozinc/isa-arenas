@@ -167,26 +167,42 @@
     estado.sucio = true; estado.modal = null; await persistir();
   }
 
-  // ── Fotos (Cloudinary) ──
-  // Subida DESHABILITADA temporalmente (CFG.cloudinary.habilitado === false)
-  // hasta disponer de un mecanismo de carga protegido. La integridad del
-  // catálogo no depende de Cloudinary: solo un admin autenticado puede guardar
-  // la URL en Firestore (reglas `catalogo/*` → esAdmin()).
-  function subidasHabilitadas() { return !!(CFG.cloudinary && CFG.cloudinary.habilitado); }
-  function agregarFoto(ev) {
-    if (!subidasHabilitadas()) { toast('Subida de fotos deshabilitada temporalmente.'); return; }
+  // ── Fotos (Cloudinary, subida FIRMADA en servidor) ──
+  // El firmador (Cloudflare Worker) valida el token Firebase + rol y devuelve
+  // una firma HMAC-SHA1. El API Secret de Cloudinary vive SOLO en el firmador.
+  function subidasHabilitadas() { return !!(CFG.cloudinary && CFG.cloudinary.habilitado && CFG.cloudinary.signerUrl && CFG.cloudinary.cloudName); }
+  async function agregarFoto(ev) {
+    if (!subidasHabilitadas()) { toast('Subida de fotos no configurada.'); return; }
     const file = ev.target.files[0]; if (!file) return;
     if (!estado.usuario) { toast('Sesión expirada: vuelve a entrar.'); render(); return; }
-    if (!file.type.startsWith('image/')) { toast('Selecciona una imagen válida'); return; }
-    if (file.size > 5 * 1024 * 1024) { toast('Imagen muy grande (máx 5 MB)'); return; }
+    if (!file.type.startsWith('image/')) { toast('Solo se admiten imágenes (JPG/PNG/WebP).'); return; }
+    if (file.size > 5 * 1024 * 1024) { toast('Imagen muy grande (máx 5 MB).'); return; }
     estado.guardando = true; render();
-    comprimir(file, 1000, 0.82).then((blob) => {
-      const fd = new FormData(); fd.append('file', blob, 'producto.jpg'); fd.append('upload_preset', CFG.cloudinary.uploadPreset); fd.append('tags', 'isa-arenas');
-      return fetch('https://api.cloudinary.com/v1_1/' + CFG.cloudinary.cloudName + '/image/upload', { method: 'POST', body: fd }).then((r) => r.json());
-    }).then((d) => {
-      if (!d.secure_url) throw new Error((d.error && d.error.message) || 'No se pudo subir');
-      estado.form.fotos.push(d.secure_url); estado.guardando = false; toast('✓ Foto agregada'); render();
-    }).catch((e) => { estado.guardando = false; toast('Error: ' + e.message); render(); });
+    try {
+      // 1) Firma en servidor: valida token Firebase + rol administrativo.
+      const idToken = await auth.currentUser.getIdToken();
+      const firmado = await fetch(CFG.cloudinary.signerUrl, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idToken })
+      }).then((r) => r.json());
+      if (!firmado.signature) throw new Error((firmado && firmado.error) || 'No se pudo autorizar la subida.');
+
+      // 2) Comprime y sube a Cloudinary con la firma (sin exponer secretos).
+      const blob = await comprimir(file, 1000, 0.82);
+      const fd = new FormData();
+      fd.append('file', blob, 'producto.jpg');
+      fd.append('api_key', firmado.apiKey);
+      fd.append('timestamp', firmado.timestamp);
+      fd.append('folder', firmado.folder);
+      fd.append('signature', firmado.signature);
+      const d = await fetch('https://api.cloudinary.com/v1_1/' + CFG.cloudinary.cloudName + '/image/upload', { method: 'POST', body: fd }).then((r) => r.json());
+      if (!d.secure_url) throw new Error((d.error && d.error.message) || 'No se pudo subir la imagen.');
+
+      estado.form.fotos.push(d.secure_url);
+      estado.guardando = false; toast('✓ Foto agregada'); render();
+    } catch (e) {
+      estado.guardando = false; toast('Error: ' + (e.message || e)); render();
+    }
   }
   function quitarFoto(i) { estado.form.fotos.splice(i, 1); render(); }
   function comprimir(file, maxW, q) {
@@ -297,8 +313,8 @@
       const fotos = f.fotos.map((u, i) => '<div class="foto-item" style="background-image:url(' + u + ')"><button class="foto-del" data-foto="' + i + '">✕</button></div>').join('');
       const cats = estado.categorias.map((c) => '<option value="' + c.id + '"' + (f.categoria === c.id ? ' selected' : '') + '>' + esc(c.nombre) + '</option>').join('');
       const subidaFoto = subidasHabilitadas()
-        ? '<input type="file" id="fotoFile" accept="image/*">' + (estado.guardando ? '<div style="color:#2E8CA5;margin-top:4px">Subiendo…</div>' : '')
-        : '<div class="sub" style="margin-top:6px">Subida de fotos deshabilitada temporalmente.</div>';
+        ? '<input type="file" id="fotoFile" accept="image/jpeg,image/png,image/webp">' + (estado.guardando ? '<div style="color:#00C4C4;margin-top:4px">Subiendo…</div>' : '')
+        : '<div class="sub" style="margin-top:6px">Subida de fotos no disponible en este momento.</div>';
       return '<div class="overlay"><div class="sheet"><div class="sheet-head"><h2>' + (estado.editandoId ? 'Editar producto' : 'Nuevo producto') + '</h2><button data-close>✕</button></div>' +
         '<div class="field"><label>Fotos</label><div class="fotos-grid">' + fotos + '</div>' +
         subidaFoto + '</div>' +

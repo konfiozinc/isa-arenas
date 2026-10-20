@@ -18,3 +18,8 @@ firestore-debug.log
 auth-debug.log
 ui-debug.log
 .firebase/
+
+# Cloudflare Workers (caché y secretos locales de wrangler)
+.wrangler/
+.dev.vars
+.dev.vars.*

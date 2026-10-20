@@ -25,12 +25,12 @@ window.CONFIG_ISA = {
   telefono: '310 325 5067',
   minimoPares: 6,                    // venta al por mayor: mínimo de pares por pedido
   cloudinary: {
-    cloudName: 'f07x0wga',           // Cloudinary de la agencia (sin firma)
-    // Preset DEDICADO a ISA (separado del de otros clientes). Hay que crearlo
-    // en la consola de Cloudinary con carpeta/formatos/peso (ver README).
-    uploadPreset: 'isa-arenas',
-    // Subida DESHABILITADA hasta disponer de un mecanismo de carga protegido.
-    habilitado: false
+    cloudName: 'f07x0wga',           // Cloudinary de la agencia
+    // Firmador de subidas (Cloudflare Worker). Firma en servidor sin exponer
+    // el API Secret; valida token Firebase + rol antes de firmar.
+    signerUrl: 'https://isa-arenas-firmador.konfiozinc.workers.dev',
+    // Subida HABILITADA vía firmador (se desactiva sola si falta signerUrl).
+    habilitado: true
   },
   firebase: {
     apiKey: 'AIzaSyDWGO2YtkELMRTYYSb4Rq2Mc40dpyMQYso',
